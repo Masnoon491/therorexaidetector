@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       optimizerCountry: 'United States',
       optimizerDevice: 'Desktop',
       optimizerPublishingDomain: 'https://www.cnet.com/home/internet/i-tried-using-my-mobile-hotspot-at-home-heres-everything-that-went-wrong/',
-      excludedUrls: [],
+      excludedUrls: ['https://example-1.com', 'https://example-2.com'],
       storeScan: true,
       aiModelVersion: 'lite',
     };
