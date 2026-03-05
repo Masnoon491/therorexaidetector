@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 import ContentEditor from "@/components/ContentEditor";
@@ -8,7 +7,6 @@ import ScanningOverlay from "@/components/ScanningOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, getFreeWordsUsed, addFreeWordsUsed, FREE_WORD_LIMIT } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
 
 /* ─── Data Types ─── */
 export interface AiBlock {
