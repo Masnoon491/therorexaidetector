@@ -2,14 +2,19 @@ import { Shield } from "lucide-react";
 
 const TopNav = () => {
   return (
-    <header className="h-14 border-b border-border bg-surface flex items-center px-6">
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <Shield className="w-4.5 h-4.5 text-primary-foreground" />
+    <header className="h-16 border-b border-border bg-card flex items-center px-8">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-foreground flex items-center justify-center">
+          <Shield className="w-5 h-5 text-card" />
         </div>
-        <span className="text-lg font-semibold tracking-tight text-foreground">
-          Theorex AI Text Detector
-        </span>
+        <div className="flex flex-col">
+          <span className="text-base font-bold tracking-tight text-foreground leading-tight">
+            Theorex AI
+          </span>
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
+            Text Detector
+          </span>
+        </div>
       </div>
     </header>
   );
