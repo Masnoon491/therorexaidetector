@@ -197,12 +197,7 @@ const Index = () => {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm">
-              <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))]" />
-              <span className="text-muted-foreground">
-                <span className="font-bold text-foreground">{wordsRemaining.toLocaleString()}</span> free words remaining
-              </span>
-            </div>
+            <div />
           )}
 
           {user ? (
