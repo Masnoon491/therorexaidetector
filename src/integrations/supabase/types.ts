@@ -38,6 +38,60 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_history: {
+        Row: {
+          ai_score: number | null
+          created_at: string
+          credits_used: number
+          id: string
+          plagiarism_score: number | null
+          title: string
+          user_id: string
+          word_count: number
+        }
+        Insert: {
+          ai_score?: number | null
+          created_at?: string
+          credits_used?: number
+          id?: string
+          plagiarism_score?: number | null
+          title?: string
+          user_id: string
+          word_count?: number
+        }
+        Update: {
+          ai_score?: number | null
+          created_at?: string
+          credits_used?: number
+          id?: string
+          plagiarism_score?: number | null
+          title?: string
+          user_id?: string
+          word_count?: number
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          balance: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
