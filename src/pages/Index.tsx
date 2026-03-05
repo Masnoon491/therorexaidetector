@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 import ContentEditor from "@/components/ContentEditor";
@@ -8,8 +7,6 @@ import ScanningOverlay from "@/components/ScanningOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, getFreeWordsUsed, addFreeWordsUsed, FREE_WORD_LIMIT } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
 
 /* ─── Data Types ─── */
 export interface AiBlock {
@@ -122,7 +119,6 @@ const Index = () => {
   const [results, setResults] = useState<ScanResults | null>(null);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
 
   const handleScan = async (text: string) => {
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
@@ -180,35 +176,6 @@ const Index = () => {
       <ScanningOverlay isScanning={isScanning} />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
-        {/* User bar */}
-        <div className="flex items-center justify-between">
-          {user ? (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{user.email}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Unlimited Scans</p>
-              </div>
-            </div>
-          ) : (
-            <div />
-          )}
-
-          {user ? (
-            <Button variant="outline" size="sm" onClick={signOut} className="gap-1.5 text-xs">
-              <LogOut className="w-3.5 h-3.5" />
-              Sign Out
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => navigate("/auth")} className="gap-1.5 text-xs font-bold">
-              <User className="w-3.5 h-3.5" />
-              Sign In / Register
-            </Button>
-          )}
-        </div>
-
         <div className="bg-card rounded-lg border border-border p-6 lg:p-8" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <ContentEditor onScan={handleScan} isScanning={isScanning} />
         </div>
