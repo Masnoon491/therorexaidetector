@@ -28,18 +28,23 @@ Deno.serve(async (req) => {
 
     const scanTitle = title || `Scan - ${new Date().toISOString()}`;
 
-    // Build form data — the Originality.ai API expects form-encoded or multipart data
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('title', scanTitle);
-    formData.append('check_ai', 'true');
-    formData.append('check_plagiarism', 'true');
-    formData.append('check_readability', 'true');
-    formData.append('check_grammar', 'true');
-    formData.append('check_facts', 'false');
-    formData.append('check_contentOptimizer', 'false');
-    formData.append('storeScan', 'true');
-    formData.append('aiModelVersion', 'lite');
+    const payload = {
+      content,
+      title: scanTitle,
+      check_ai: true,
+      check_plagiarism: true,
+      check_readability: true,
+      check_grammar: true,
+      check_facts: false,
+      check_contentOptimizer: false,
+      optimizerQuery: 'content authenticity',
+      optimizerCountry: 'United States',
+      optimizerDevice: 'Desktop',
+      optimizerPublishingDomain: 'https://example.com',
+      excludedUrls: [],
+      storeScan: true,
+      aiModelVersion: 'lite',
+    };
 
     console.log('Sending scan request with title:', scanTitle, 'content length:', content.length);
 
@@ -47,8 +52,9 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'X-OAI-API-KEY': apiKey,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(payload),
     });
 
     const responseText = await response.text();
