@@ -119,7 +119,6 @@ const Index = () => {
   const [results, setResults] = useState<ScanResults | null>(null);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
 
   const handleScan = async (text: string) => {
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
