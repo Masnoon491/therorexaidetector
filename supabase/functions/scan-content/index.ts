@@ -44,7 +44,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { content, title } = await req.json();
+    const body = await req.json();
+    const { content, title, debugCheck } = body;
+
+    if (debugCheck) {
+      const endpoints = [
+        'https://api.originality.ai/api/v3/credits',
+        'https://api.originality.ai/api/v3/credit-balance',
+        'https://api.originality.ai/api/v3/scan-results',
+      ];
+
+      const checks = await Promise.all(endpoints.map(async (url) => {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: { 'X-OAI-API-KEY': apiKey },
+        });
+        const txt = await res.text();
+        return { url, status: res.status, body: txt.slice(0, 300) };
+      }));
+
+      return new Response(JSON.stringify({ checks }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!content || typeof content !== 'string' || content.length < 50) {
       return new Response(JSON.stringify({ error: 'Content must be at least 50 characters' }), {
