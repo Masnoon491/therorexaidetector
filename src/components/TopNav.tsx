@@ -1,20 +1,15 @@
-import { Shield, Coins } from "lucide-react";
+import { Shield } from "lucide-react";
 
 const TopNav = () => {
   return (
-    <header className="h-14 border-b border-border bg-surface flex items-center justify-between px-6">
+    <header className="h-14 border-b border-border bg-surface flex items-center px-6">
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <Shield className="w-4.5 h-4.5 text-primary-foreground" />
         </div>
         <span className="text-lg font-semibold tracking-tight text-foreground">
-          ProofGuard
+          Theorex AI Text Detector
         </span>
-      </div>
-
-      <div className="flex items-center gap-2 bg-muted rounded-full px-4 py-1.5">
-        <Coins className="w-4 h-4 text-primary" />
-        <span className="text-sm font-medium text-foreground">12 Credits</span>
       </div>
     </header>
   );

@@ -5,10 +5,16 @@ import ResultsSidebar from "@/components/ResultsSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export interface AiBlock {
+  text: string;
+  score: number;
+}
+
 export interface ScanResults {
   ai?: { score: number };
   plagiarism?: { score: number };
   readability?: { grade?: string; score?: number };
+  aiBlocks?: AiBlock[];
 }
 
 function normalizeResponse(data: any): ScanResults {
@@ -35,6 +41,15 @@ function normalizeResponse(data: any): ScanResults {
       grade: readGrade != null ? String(readGrade) : undefined,
       score: readScore != null ? Number(readScore) : undefined,
     };
+  }
+
+  // Block-by-block AI highlights
+  const blocks = r?.ai?.blocks || r?.ai?.sentences || r?.ai?.paragraphs;
+  if (Array.isArray(blocks) && blocks.length > 0) {
+    normalized.aiBlocks = blocks.map((b: any) => ({
+      text: b.text || b.sentence || b.content || "",
+      score: Number(b.score ?? b.confidence?.AI ?? b.ai ?? 0),
+    }));
   }
 
   return normalized;
