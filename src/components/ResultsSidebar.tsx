@@ -29,9 +29,9 @@ const resultSlots: ResultItem[] = [
   },
 ];
 
-const SkeletonBar = ({ width }: { width: string }) => (
-  <div className="animate-shimmer rounded-md h-5" style={{ width }} />
-);
+function SkeletonBar({ width }: { width: string }) {
+  return <div className="animate-shimmer rounded-md h-5" style={{ width }} />;
+}
 
 interface ResultsSidebarProps {
   results: ScanResults | null;
@@ -68,13 +68,10 @@ const ResultsSidebar = ({ results, isScanning }: ResultsSidebarProps) => {
                   <SkeletonBar width="75%" />
                   <SkeletonBar width="50%" />
                 </div>
-              ) : value != null ? (
-                <p className="text-2xl font-bold text-primary">{value}</p>
+              ) : results ? (
+                <p className="text-2xl font-bold text-primary">{value ?? "N/A"}</p>
               ) : (
-                <div className="space-y-2.5">
-                  <SkeletonBar width="75%" />
-                  <SkeletonBar width="50%" />
-                </div>
+                <p className="text-sm text-navy-foreground/40">Awaiting scan</p>
               )}
             </div>
           );
