@@ -48,22 +48,38 @@ Deno.serve(async (req) => {
     const { content, title, debugCheck } = body;
 
     if (debugCheck) {
-      const endpoints = [
-        'https://api.originality.ai/api/v3/credits',
-        'https://api.originality.ai/api/v3/credit-balance',
-        'https://api.originality.ai/api/v3/scan-results',
-      ];
+      const debugUrlPayload = {
+        url: 'https://www.cnet.com/home/internet/i-tried-using-my-mobile-hotspot-at-home-heres-everything-that-went-wrong/#google_vignette',
+        title: 'debug url scan',
+        excludedUrl: null,
+        check_ai: true,
+        check_plagiarism: true,
+        check_facts: true,
+        check_readability: true,
+        check_grammar: true,
+        check_contentOptimizer: true,
+        optimizerQuery: 'Mobile Hotspot',
+        optimizerCountry: 'United States',
+        optimizerDevice: 'Desktop',
+        optimizerPublishingDomain: 'https://www.cnet.com/home/internet/i-tried-using-my-mobile-hotspot-at-home-heres-everything-that-went-wrong/',
+        storeScan: true,
+        aiModel: 'turbo',
+      };
 
-      const checks = await Promise.all(endpoints.map(async (url) => {
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: { 'X-OAI-API-KEY': apiKey },
-        });
-        const txt = await res.text();
-        return { url, status: res.status, body: txt.slice(0, 300) };
-      }));
+      const urlScanRes = await fetch('https://api.originality.ai/api/v3/scan/url', {
+        method: 'POST',
+        headers: {
+          'X-OAI-API-KEY': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(debugUrlPayload),
+      });
 
-      return new Response(JSON.stringify({ checks }), {
+      const text = await urlScanRes.text();
+      return new Response(JSON.stringify({
+        status: urlScanRes.status,
+        body: text.slice(0, 1000),
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
