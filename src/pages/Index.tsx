@@ -1,11 +1,25 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import TopNav from "@/components/TopNav";
+import ContentEditor from "@/components/ContentEditor";
+import ResultsSidebar from "@/components/ResultsSidebar";
 
 const Index = () => {
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleScan = (text: string) => {
+    setIsScanning(true);
+    // Placeholder — will integrate real scanning later
+    setTimeout(() => setIsScanning(false), 2000);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="flex flex-col h-screen">
+      <TopNav />
+      <div className="flex flex-1 overflow-hidden">
+        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+          <ContentEditor onScan={handleScan} isScanning={isScanning} />
+        </main>
+        <ResultsSidebar />
       </div>
     </div>
   );
