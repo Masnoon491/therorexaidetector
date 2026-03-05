@@ -19,6 +19,7 @@ const Auth = () => {
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
