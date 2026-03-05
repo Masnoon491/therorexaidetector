@@ -4,11 +4,11 @@ import type { ScanResults } from "@/pages/Index";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
-  if (pct <= 14) return { label: "CLEAN", bg: "bg-[hsl(var(--primary))]", text: "text-primary-foreground" };
-  if (pct <= 39) return { label: "LOW", bg: "bg-[hsl(122,39%,49%)]", text: "text-primary-foreground" };
+  if (pct <= 14) return { label: "CLEAN", bg: "bg-primary", text: "text-primary-foreground" };
+  if (pct <= 39) return { label: "LOW", bg: "bg-[hsl(100,50%,45%)]", text: "text-primary-foreground" };
   if (pct <= 59) return { label: "MEDIUM", bg: "bg-[hsl(var(--warning))]", text: "text-primary-foreground" };
-  if (pct <= 84) return { label: "HIGH", bg: "bg-[hsl(var(--orange))]", text: "text-primary-foreground" };
-  return { label: "VERY HIGH", bg: "bg-[hsl(var(--destructive))]", text: "text-destructive-foreground" };
+  if (pct <= 84) return { label: "HIGH", bg: "bg-destructive", text: "text-destructive-foreground" };
+  return { label: "VERY HIGH", bg: "bg-[hsl(4,74%,38%)]", text: "text-destructive-foreground" };
 }
 
 /* ─── Circular Gauge ─── */
@@ -48,14 +48,14 @@ function GradeBadge({ score }: { score: number }) {
   let grade: string;
   let gradeColor: string;
   if (pct <= 14) { grade = "A"; gradeColor = "bg-primary text-primary-foreground"; }
-  else if (pct <= 39) { grade = "B"; gradeColor = "bg-[hsl(122,39%,49%)] text-primary-foreground"; }
+  else if (pct <= 39) { grade = "B"; gradeColor = "bg-[hsl(100,50%,45%)] text-primary-foreground"; }
   else if (pct <= 59) { grade = "C"; gradeColor = "bg-[hsl(var(--warning))] text-primary-foreground"; }
-  else if (pct <= 84) { grade = "D"; gradeColor = "bg-[hsl(var(--orange))] text-primary-foreground"; }
-  else { grade = "F"; gradeColor = "bg-destructive text-destructive-foreground"; }
+  else if (pct <= 84) { grade = "D"; gradeColor = "bg-destructive text-destructive-foreground"; }
+  else { grade = "F"; gradeColor = "bg-[hsl(4,74%,38%)] text-destructive-foreground"; }
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className={`w-16 h-16 rounded-xl ${gradeColor} flex items-center justify-center shadow-md`}>
+      <div className={`w-16 h-16 rounded-lg ${gradeColor} flex items-center justify-center`}>
         <span className="text-3xl font-extrabold">{grade}</span>
       </div>
       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Grade</span>
@@ -66,23 +66,23 @@ function GradeBadge({ score }: { score: number }) {
 /* ─── Grading Legend ─── */
 const gradeLegend = [
   { grade: "A", label: "VERIFIED CLEAN", range: "0–14%", desc: "Human Authentic", bg: "bg-primary", text: "text-primary-foreground" },
-  { grade: "B", label: "LOW RISK", range: "15–39%", desc: "Likely Human", bg: "bg-[hsl(122,39%,49%)]", text: "text-primary-foreground" },
+  { grade: "B", label: "LOW RISK", range: "15–39%", desc: "Likely Human", bg: "bg-[hsl(100,50%,45%)]", text: "text-primary-foreground" },
   { grade: "C", label: "MODERATE RISK", range: "40–59%", desc: "Mixed Content", bg: "bg-[hsl(var(--warning))]", text: "text-primary-foreground" },
-  { grade: "D", label: "HIGH RISK", range: "60–84%", desc: "Likely AI", bg: "bg-[hsl(var(--orange))]", text: "text-primary-foreground" },
-  { grade: "F", label: "CRITICAL RISK", range: "85–100%", desc: "AI Generated", bg: "bg-destructive", text: "text-destructive-foreground" },
+  { grade: "D", label: "HIGH RISK", range: "60–84%", desc: "Likely AI", bg: "bg-destructive", text: "text-destructive-foreground" },
+  { grade: "F", label: "CRITICAL RISK", range: "85–100%", desc: "AI Generated", bg: "bg-[hsl(4,74%,38%)]", text: "text-destructive-foreground" },
 ];
 
 function GradingLegend() {
   return (
-    <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center gap-2 mb-5">
         <Award className="w-4 h-4 text-primary" />
         <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Grading Legend</h3>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
         {gradeLegend.map((g) => (
-          <div key={g.grade} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary border border-border">
-            <div className={`w-10 h-10 rounded-lg ${g.bg} ${g.text} flex items-center justify-center shadow-sm`}>
+          <div key={g.grade} className="flex flex-col items-center gap-2 p-4 rounded-md bg-secondary border border-border">
+            <div className={`w-10 h-10 rounded-md ${g.bg} ${g.text} flex items-center justify-center`}>
               <span className="text-xl font-extrabold">{g.grade}</span>
             </div>
             <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">{g.label}</span>
@@ -98,14 +98,14 @@ function GradingLegend() {
 /* ─── Sentence Heatmap ─── */
 function SentenceHeatmap({ blocks }: { blocks: { text: string; fake: number; real: number }[] }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
+    <div className="overflow-hidden rounded-md border border-border">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-muted">
-            <th className="text-left py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-16">#</th>
-            <th className="text-left py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Sentence</th>
-            <th className="text-center py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-20">AI %</th>
-            <th className="text-center py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-24">Risk</th>
+          <tr className="bg-secondary">
+            <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-16">#</th>
+            <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Sentence</th>
+            <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-20">AI %</th>
+            <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-24">Risk</th>
           </tr>
         </thead>
         <tbody>
@@ -135,12 +135,12 @@ function SentenceHeatmap({ blocks }: { blocks: { text: string; fake: number; rea
 /* ─── Stat Card ─── */
 function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ElementType }) {
   return (
-    <div className="bg-secondary rounded-xl p-4 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+    <div className="bg-secondary rounded-lg p-4 flex items-center gap-3 border border-border">
+      <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
         <Icon className="w-4 h-4 text-primary" />
       </div>
       <div>
-        <p className="text-lg font-extrabold text-navy font-mono tabular-nums">{value}</p>
+        <p className="text-lg font-extrabold text-foreground font-mono tabular-nums">{value}</p>
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
       </div>
     </div>
@@ -243,7 +243,7 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
         <Button
           onClick={() => downloadReport(results)}
           variant="outline"
-          className="gap-2 font-semibold border-primary/40 text-primary hover:bg-primary/5"
+          className="gap-2 font-semibold border-border text-foreground hover:bg-secondary"
         >
           <Download className="w-4 h-4" />
           Download Report
@@ -252,7 +252,7 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* AI Detection — Gauges + Grade */}
       {results.ai && (
-        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-6">
           <div className="flex items-center gap-2 mb-6">
             <Bot className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">AI Detection</h3>
@@ -267,23 +267,23 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* Sentence Heatmap */}
       {results.ai?.blocks && results.ai.blocks.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Sentence Heatmap</h3>
           </div>
           <div className="flex items-center gap-4 mb-4 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-primary" /> Clean</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(122,39%,49%)]" /> Low</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(100,50%,45%)]" /> Low</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--warning))]" /> Medium</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--orange))]" /> High</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive" /> Very High</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive" /> High</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(4,74%,38%)]" /> Very High</span>
           </div>
           <SentenceHeatmap blocks={results.ai.blocks} />
         </div>
       )}
 
-      {/* Stats Grid — Only Plagiarism + Readability summary */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {results.plagiarism && (
           <StatCard label="Plagiarism" value={`${Math.round(results.plagiarism.score)}%`} icon={FileWarning} />
@@ -301,14 +301,14 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* Fact Check */}
       {results.facts && results.facts.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Fact Check</h3>
           </div>
           <div className="space-y-2 max-h-56 overflow-y-auto">
             {results.facts.map((f, i) => (
-              <div key={i} className="p-3 rounded-lg bg-secondary border border-border">
+              <div key={i} className="p-3 rounded-md bg-secondary border border-border">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">Claim {i + 1}</span>
                   <span className={`text-[10px] font-bold ${f.truthfulness === "0%" ? "text-muted-foreground" : "text-[hsl(var(--warning))]"}`}>

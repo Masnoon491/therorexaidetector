@@ -30,7 +30,7 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Paste or type your content here…"
-          className="w-full h-full min-h-[300px] resize-none rounded-lg border border-border bg-card p-5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all font-sans"
+          className="w-full h-full min-h-[300px] resize-none rounded-md border border-border bg-card p-5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all font-sans"
         />
       </div>
 
@@ -50,7 +50,7 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
         <Button
           onClick={() => onScan(text)}
           disabled={wordCount < 10 || wordCount > MAX_WORDS || isScanning}
-          className="gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-md px-6"
+          className="gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm px-6"
         >
           <ScanSearch className="w-4 h-4" />
           {isScanning ? "Scanning…" : "Run Analysis"}

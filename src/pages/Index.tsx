@@ -9,8 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, getFreeWordsUsed, addFreeWordsUsed, FREE_WORD_LIMIT } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, AlertTriangle } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
+/* ─── Data Types ─── */
 export interface AiBlock {
   text: string;
   fake: number;
@@ -126,7 +127,6 @@ const Index = () => {
   const handleScan = async (text: string) => {
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
 
-    // If not logged in, check free word limit
     if (!user) {
       const used = getFreeWordsUsed();
       if (used + wordCount > FREE_WORD_LIMIT) {
@@ -162,7 +162,6 @@ const Index = () => {
         throw new Error(msg);
       }
 
-      // Track usage for anonymous users
       if (!user) {
         addFreeWordsUsed(wordCount);
       }
@@ -174,9 +173,6 @@ const Index = () => {
       setIsScanning(false);
     }
   };
-
-  const wordsUsed = getFreeWordsUsed();
-  const wordsRemaining = Math.max(0, FREE_WORD_LIMIT - wordsUsed);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -213,7 +209,7 @@ const Index = () => {
           )}
         </div>
 
-        <div className="bg-card rounded-2xl border border-border p-6 lg:p-8 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-6 lg:p-8" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <ContentEditor onScan={handleScan} isScanning={isScanning} />
         </div>
         <ResultsPanel results={results} />
