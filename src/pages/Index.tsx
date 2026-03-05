@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, getFreeWordsUsed, addFreeWordsUsed, FREE_WORD_LIMIT } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
 
 /* ─── Data Types ─── */
 export interface AiBlock {
