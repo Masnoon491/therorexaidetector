@@ -17,8 +17,8 @@ export function useCredits() {
     if (data) setBalance(data.balance);
     else {
       // Create initial credits row if missing (for users created before trigger)
-      await supabase.from("user_credits").insert({ user_id: user.id, balance: 100 });
-      setBalance(100);
+      await supabase.from("user_credits").insert({ user_id: user.id, balance: 0 });
+      setBalance(0);
     }
     setLoading(false);
   }, [user]);
