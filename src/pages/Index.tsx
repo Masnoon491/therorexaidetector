@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 import ContentEditor from "@/components/ContentEditor";
@@ -6,6 +7,9 @@ import ResultsPanel from "@/components/ResultsPanel";
 import ScanningOverlay from "@/components/ScanningOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth, getFreeWordsUsed, addFreeWordsUsed, FREE_WORD_LIMIT } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut, User, AlertTriangle } from "lucide-react";
 
 export interface AiBlock {
   text: string;
@@ -116,8 +120,28 @@ const Index = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResults | null>(null);
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleScan = async (text: string) => {
+    const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+
+    // If not logged in, check free word limit
+    if (!user) {
+      const used = getFreeWordsUsed();
+      if (used + wordCount > FREE_WORD_LIMIT) {
+        const remaining = Math.max(0, FREE_WORD_LIMIT - used);
+        toast({
+          title: "Free limit reached",
+          description: remaining > 0
+            ? `You have ${remaining} free words remaining. This text has ${wordCount} words. Please register for unlimited scans.`
+            : "You've used your free 1,000 words. Please register for unlimited scans.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsScanning(true);
     setResults(null);
 
@@ -138,6 +162,11 @@ const Index = () => {
         throw new Error(msg);
       }
 
+      // Track usage for anonymous users
+      if (!user) {
+        addFreeWordsUsed(wordCount);
+      }
+
       setResults(normalizeResponse(data));
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });
@@ -146,12 +175,49 @@ const Index = () => {
     }
   };
 
+  const wordsUsed = getFreeWordsUsed();
+  const wordsRemaining = Math.max(0, FREE_WORD_LIMIT - wordsUsed);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopNav />
       <ScanningOverlay isScanning={isScanning} />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
+        {/* User bar */}
+        <div className="flex items-center justify-between">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{user.email}</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Unlimited Scans</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="w-4 h-4 text-[hsl(var(--warning))]" />
+              <span className="text-muted-foreground">
+                <span className="font-bold text-foreground">{wordsRemaining.toLocaleString()}</span> free words remaining
+              </span>
+            </div>
+          )}
+
+          {user ? (
+            <Button variant="outline" size="sm" onClick={signOut} className="gap-1.5 text-xs">
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button size="sm" onClick={() => navigate("/auth")} className="gap-1.5 text-xs font-bold">
+              <User className="w-3.5 h-3.5" />
+              Sign In / Register
+            </Button>
+          )}
+        </div>
+
         <div className="bg-card rounded-2xl border border-border p-6 lg:p-8 shadow-sm">
           <ContentEditor onScan={handleScan} isScanning={isScanning} />
         </div>
