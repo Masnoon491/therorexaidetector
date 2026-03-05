@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Mail, Lock, ArrowLeft } from "lucide-react";
-import { MosaicStrip } from "@/components/TopNav";
+import { Mail, Lock, ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -56,22 +55,17 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="bg-navy">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <Shield className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-navy-foreground">Theorex</span>
-            <span className="text-xs font-semibold text-primary tracking-wide">AI Text Detector</span>
-          </div>
+      {/* Header */}
+      <div className="bg-card border-b border-border">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-baseline gap-1.5">
+          <span className="text-xl font-extrabold tracking-tight text-foreground">THEOREX</span>
+          <span className="text-xl font-bold text-primary">Consulting</span>
         </div>
       </div>
-      <MosaicStrip />
 
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="bg-card rounded-2xl border border-border p-8 shadow-sm">
+          <div className="bg-card rounded-lg border border-border p-8" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div className="text-center mb-6">
               <h1 className="text-2xl font-extrabold text-foreground">
                 {isLogin ? "Welcome Back" : "Create Account"}
