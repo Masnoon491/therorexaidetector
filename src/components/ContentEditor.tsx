@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScanSearch } from "lucide-react";
 
-const MAX_CHARS = 5000;
+const MAX_WORDS = 1000;
 
 interface ContentEditorProps {
   onScan: (text: string) => void;
@@ -11,8 +11,8 @@ interface ContentEditorProps {
 
 const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
   const [text, setText] = useState("");
-  const charCount = text.length;
-  const charPercent = Math.min((charCount / MAX_CHARS) * 100, 100);
+  const wordCount = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+  const wordPercent = Math.min((wordCount / MAX_WORDS) * 100, 100);
 
   return (
     <div className="flex flex-col h-full">
@@ -28,7 +28,7 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
       <div className="flex-1 relative">
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))}
+          onChange={(e) => setText(e.target.value)}
           placeholder="Paste or type your content here…"
           className="w-full h-full min-h-[300px] resize-none rounded-lg border border-border bg-card p-5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all font-sans"
         />
@@ -38,18 +38,18 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
         <div className="flex items-center gap-3">
           <div className="w-32 h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary/60 transition-all duration-300"
-              style={{ width: `${charPercent}%` }}
+              className={`h-full rounded-full transition-all duration-300 ${wordCount > MAX_WORDS ? 'bg-destructive' : 'bg-primary/60'}`}
+              style={{ width: `${wordPercent}%` }}
             />
           </div>
           <span className="text-xs text-muted-foreground font-mono tabular-nums">
-            {charCount.toLocaleString()}/{MAX_CHARS.toLocaleString()}
+            {wordCount.toLocaleString()}/{MAX_WORDS.toLocaleString()} words
           </span>
         </div>
 
         <Button
           onClick={() => onScan(text)}
-          disabled={charCount < 50 || isScanning}
+          disabled={wordCount < 10 || wordCount > MAX_WORDS || isScanning}
           className="gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-md px-6"
         >
           <ScanSearch className="w-4 h-4" />
