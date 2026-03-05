@@ -1,4 +1,4 @@
-import { FileText, History, Coins, CreditCard } from "lucide-react";
+import { FileText, History, Coins, CreditCard, Plus } from "lucide-react";
 import { useCredits } from "@/hooks/useCredits";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -17,9 +17,10 @@ import { Button } from "@/components/ui/button";
 interface AppSidebarProps {
   activeView: "editor" | "history";
   onViewChange: (view: "editor" | "history") => void;
+  onNewScan?: () => void;
 }
 
-export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
+export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { balance } = useCredits();
@@ -32,10 +33,23 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border bg-card">
-      <SidebarContent className="py-4">
+      <SidebarContent className="py-4 flex flex-col h-full">
+        {/* New Scan Button */}
+        <div className="px-3 mb-4">
+          <Button
+            onClick={onNewScan}
+            className={`w-full gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 ${collapsed ? "px-2" : ""}`}
+            size={collapsed ? "icon" : "default"}
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            {!collapsed && <span className="text-sm">New Scan</span>}
+          </Button>
+        </div>
+
+        {/* Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground px-4">
-            Navigation
+            Scan
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -58,31 +72,26 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Balance section */}
+        {/* Balance section at bottom */}
         {user && (
           <SidebarGroup className="mt-auto">
-            <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground px-4">
-              Balance
-            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className={`mx-3 rounded-lg border border-border bg-[hsl(var(--stat-bg))] p-4 ${collapsed ? "p-2" : ""}`}>
+              <div className={`mx-3 rounded-lg border border-border bg-secondary p-4 ${collapsed ? "p-2" : ""}`}>
                 {!collapsed ? (
                   <>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Coins className="w-4 h-4 text-primary" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        Available Credits
-                      </span>
-                    </div>
-                    <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
-                      {balance ?? "—"}
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center mb-1">
+                      Balance
+                    </p>
+                    <p className="text-lg font-extrabold text-foreground font-mono tabular-nums text-center">
+                      {balance != null ? balance.toLocaleString() : "—"} <span className="text-xs font-medium text-muted-foreground">credits</span>
                     </p>
                     <Button
                       size="sm"
-                      className="w-full mt-3 gap-1.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+                      variant="outline"
+                      className="w-full mt-3 gap-1.5 text-xs font-semibold border-primary text-primary hover:bg-primary/10"
                     >
                       <CreditCard className="w-3.5 h-3.5" />
-                      Buy Credits
+                      Buy more credits
                     </Button>
                   </>
                 ) : (
