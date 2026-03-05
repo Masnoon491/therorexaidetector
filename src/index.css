@@ -6,66 +6,61 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 24% 18%;
+    --background: 210 20% 98%;
+    --foreground: 192 15% 21%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 24% 18%;
+    --card-foreground: 192 15% 21%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 24% 18%;
+    --popover-foreground: 192 15% 21%;
 
-    --primary: 170 100% 37%;
+    --primary: 160 100% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 216 30% 97%;
-    --secondary-foreground: 240 24% 18%;
+    --secondary: 210 25% 96%;
+    --secondary-foreground: 192 15% 21%;
 
-    --muted: 216 20% 95%;
-    --muted-foreground: 215 14% 50%;
+    --muted: 210 18% 94%;
+    --muted-foreground: 195 10% 44%;
 
-    --accent: 170 100% 37%;
+    --accent: 160 100% 36%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 3 83% 55%;
+    --destructive: 4 74% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 216 20% 90%;
-    --input: 216 20% 90%;
-    --ring: 170 100% 37%;
+    --border: 210 18% 89%;
+    --input: 210 18% 89%;
+    --ring: 160 100% 36%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --navy: 245 50% 20%;
+    --navy: 192 15% 21%;
     --navy-foreground: 0 0% 100%;
-    --navy-light: 245 30% 35%;
+    --navy-light: 195 10% 44%;
 
-    --success: 122 39% 49%;
+    --success: 160 100% 36%;
     --success-foreground: 0 0% 100%;
 
     --warning: 36 100% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --purple: 262 55% 51%;
     --orange: 17 100% 60%;
-    --teal: 170 100% 37%;
 
-    --surface: 216 30% 97%;
+    --surface: 210 25% 96%;
     --surface-raised: 0 0% 100%;
 
-    --skeleton-base: 216 20% 92%;
-    --skeleton-shine: 216 20% 96%;
+    --stat-bg: 210 29% 95%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 24% 18%;
-    --sidebar-primary: 170 100% 37%;
+    --sidebar-foreground: 192 15% 21%;
+    --sidebar-primary: 160 100% 36%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 216 30% 97%;
-    --sidebar-accent-foreground: 240 24% 18%;
-    --sidebar-border: 216 20% 90%;
-    --sidebar-ring: 170 100% 37%;
-
-    --stat-bg: 216 33% 96%;
+    --sidebar-accent: 210 25% 96%;
+    --sidebar-accent-foreground: 192 15% 21%;
+    --sidebar-border: 210 18% 89%;
+    --sidebar-ring: 160 100% 36%;
   }
 }
 
@@ -87,9 +82,9 @@
   .animate-shimmer {
     background: linear-gradient(
       90deg,
-      hsl(var(--skeleton-base)) 25%,
-      hsl(var(--skeleton-shine)) 50%,
-      hsl(var(--skeleton-base)) 75%
+      hsl(var(--muted)) 25%,
+      hsl(var(--surface)) 50%,
+      hsl(var(--muted)) 75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;

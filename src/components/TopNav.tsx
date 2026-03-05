@@ -1,56 +1,46 @@
-import { Shield } from "lucide-react";
-
-const MosaicStrip = () => (
-  <div className="h-1.5 w-full flex">
-    {/* Repeating geometric color blocks inspired by Theorex logo palette */}
-    {Array.from({ length: 40 }).map((_, i) => {
-      const colors = [
-        "bg-[hsl(var(--primary))]",       // teal
-        "bg-[hsl(var(--purple))]",         // purple
-        "bg-[hsl(var(--orange))]",         // orange
-        "bg-[hsl(122,39%,49%)]",           // green
-        "bg-[hsl(var(--destructive))]",    // red
-        "bg-[hsl(var(--warning))]",        // yellow
-        "bg-[hsl(330,65%,55%)]",           // pink
-        "bg-[hsl(var(--navy))]",           // navy
-      ];
-      return (
-        <div
-          key={i}
-          className={`flex-1 ${colors[i % colors.length]}`}
-        />
-      );
-    })}
-  </div>
-);
+import { Mail, MessageCircle } from "lucide-react";
 
 const TopNav = () => {
   return (
-    <header className="sticky top-0 z-50">
-      <div className="bg-navy">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex flex-col items-center gap-1.5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-extrabold tracking-tight text-navy-foreground">
-                Theorex
-              </span>
-              <span className="text-xs font-semibold text-primary tracking-wide">
-                AI Text Detector
-              </span>
-            </div>
+    <header className="sticky top-0 z-50 bg-card border-b border-border">
+      <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex flex-col">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold tracking-tight text-foreground">
+              THEOREX
+            </span>
+            <span className="text-xl font-bold text-primary">
+              Consulting
+            </span>
           </div>
-          <p className="text-[11px] text-navy-foreground/50 tracking-wide mt-0.5">
+          <p className="text-[11px] text-muted-foreground tracking-wide mt-0.5">
             AI Authenticity Intelligence • Promoting Transparency Over Mere Detection
           </p>
         </div>
+
+        {/* Contact */}
+        <div className="hidden sm:flex items-center gap-5">
+          <a
+            href="https://wa.me/8801819185751"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            01819185751
+          </a>
+          <a
+            href="mailto:salestheorex@gmail.com"
+            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            salestheorex@gmail.com
+          </a>
+        </div>
       </div>
-      <MosaicStrip />
     </header>
   );
 };
 
-export { MosaicStrip };
 export default TopNav;
