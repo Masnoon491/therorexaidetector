@@ -1,14 +1,14 @@
-import { Download, Bot, ShieldCheck, BookOpen, SpellCheck, FileWarning, AlertTriangle } from "lucide-react";
+import { Download, Bot, ShieldCheck, FileWarning, AlertTriangle, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/pages/Index";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
-  if (pct <= 10) return { label: "CLEAN", bg: "bg-[hsl(var(--success))]", text: "text-[hsl(var(--success-foreground))]" };
-  if (pct <= 30) return { label: "LOW", bg: "bg-[hsl(160,60%,55%)]", text: "text-[hsl(var(--success-foreground))]" };
-  if (pct <= 60) return { label: "MEDIUM", bg: "bg-[hsl(var(--warning))]", text: "text-[hsl(var(--warning-foreground))]" };
-  if (pct <= 85) return { label: "HIGH", bg: "bg-destructive", text: "text-destructive-foreground" };
-  return { label: "VERY HIGH", bg: "bg-[hsl(0,72%,40%)]", text: "text-[hsl(var(--destructive-foreground))]" };
+  if (pct <= 14) return { label: "CLEAN", bg: "bg-[hsl(var(--primary))]", text: "text-primary-foreground" };
+  if (pct <= 39) return { label: "LOW", bg: "bg-[hsl(122,39%,49%)]", text: "text-primary-foreground" };
+  if (pct <= 59) return { label: "MEDIUM", bg: "bg-[hsl(var(--warning))]", text: "text-primary-foreground" };
+  if (pct <= 84) return { label: "HIGH", bg: "bg-[hsl(var(--orange))]", text: "text-primary-foreground" };
+  return { label: "VERY HIGH", bg: "bg-[hsl(var(--destructive))]", text: "text-destructive-foreground" };
 }
 
 /* ─── Circular Gauge ─── */
@@ -17,8 +17,8 @@ function CircularGauge({ value, label, color }: { value: number; label: string; 
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (pct / 100) * circumference;
-  const strokeColor = color === "danger" ? "hsl(var(--destructive))" : "hsl(var(--success))";
-  const textColor = color === "danger" ? "text-destructive" : "text-[hsl(var(--success))]";
+  const strokeColor = color === "danger" ? "hsl(var(--destructive))" : "hsl(var(--primary))";
+  const textColor = color === "danger" ? "text-destructive" : "text-primary";
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -47,10 +47,10 @@ function GradeBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   let grade: string;
   let gradeColor: string;
-  if (pct <= 15) { grade = "A"; gradeColor = "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]"; }
-  else if (pct <= 30) { grade = "B"; gradeColor = "bg-[hsl(160,60%,55%)] text-[hsl(var(--success-foreground))]"; }
-  else if (pct <= 50) { grade = "C"; gradeColor = "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]"; }
-  else if (pct <= 75) { grade = "D"; gradeColor = "bg-destructive/80 text-destructive-foreground"; }
+  if (pct <= 14) { grade = "A"; gradeColor = "bg-primary text-primary-foreground"; }
+  else if (pct <= 39) { grade = "B"; gradeColor = "bg-[hsl(122,39%,49%)] text-primary-foreground"; }
+  else if (pct <= 59) { grade = "C"; gradeColor = "bg-[hsl(var(--warning))] text-primary-foreground"; }
+  else if (pct <= 84) { grade = "D"; gradeColor = "bg-[hsl(var(--orange))] text-primary-foreground"; }
   else { grade = "F"; gradeColor = "bg-destructive text-destructive-foreground"; }
 
   return (
@@ -59,6 +59,38 @@ function GradeBadge({ score }: { score: number }) {
         <span className="text-3xl font-extrabold">{grade}</span>
       </div>
       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Grade</span>
+    </div>
+  );
+}
+
+/* ─── Grading Legend ─── */
+const gradeLegend = [
+  { grade: "A", label: "VERIFIED CLEAN", range: "0–14%", desc: "Human Authentic", bg: "bg-primary", text: "text-primary-foreground" },
+  { grade: "B", label: "LOW RISK", range: "15–39%", desc: "Likely Human", bg: "bg-[hsl(122,39%,49%)]", text: "text-primary-foreground" },
+  { grade: "C", label: "MODERATE RISK", range: "40–59%", desc: "Mixed Content", bg: "bg-[hsl(var(--warning))]", text: "text-primary-foreground" },
+  { grade: "D", label: "HIGH RISK", range: "60–84%", desc: "Likely AI", bg: "bg-[hsl(var(--orange))]", text: "text-primary-foreground" },
+  { grade: "F", label: "CRITICAL RISK", range: "85–100%", desc: "AI Generated", bg: "bg-destructive", text: "text-destructive-foreground" },
+];
+
+function GradingLegend() {
+  return (
+    <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-5">
+        <Award className="w-4 h-4 text-primary" />
+        <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Grading Legend</h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        {gradeLegend.map((g) => (
+          <div key={g.grade} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary border border-border">
+            <div className={`w-10 h-10 rounded-lg ${g.bg} ${g.text} flex items-center justify-center shadow-sm`}>
+              <span className="text-xl font-extrabold">{g.grade}</span>
+            </div>
+            <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">{g.label}</span>
+            <span className="text-[10px] font-mono text-muted-foreground">{g.range}</span>
+            <span className="text-[10px] text-muted-foreground text-center">{g.desc}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -108,7 +140,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: string |
         <Icon className="w-4 h-4 text-primary" />
       </div>
       <div>
-        <p className="text-lg font-extrabold text-[hsl(var(--navy))] font-mono tabular-nums">{value}</p>
+        <p className="text-lg font-extrabold text-navy font-mono tabular-nums">{value}</p>
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
       </div>
     </div>
@@ -159,21 +191,9 @@ function downloadReport(results: ScanResults) {
     lines.push("───────────────────────────────────────────");
     lines.push("  READABILITY");
     lines.push("───────────────────────────────────────────");
-    if (results.readability.fleschReadingEase != null) lines.push(`  Flesch Reading Ease:  ${results.readability.fleschReadingEase}`);
-    if (results.readability.fleschGradeLevel != null) lines.push(`  Flesch Grade Level:   ${results.readability.fleschGradeLevel}`);
-    if (results.readability.gunningFoxIndex != null) lines.push(`  Gunning Fog Index:    ${results.readability.gunningFoxIndex}`);
-    if (results.readability.smogIndex != null) lines.push(`  SMOG Index:           ${results.readability.smogIndex}`);
-  }
-
-  if (results.grammar && results.grammar.length > 0) {
-    lines.push("");
-    lines.push("───────────────────────────────────────────");
-    lines.push(`  GRAMMAR & SPELLING (${results.grammar.length} issues)`);
-    lines.push("───────────────────────────────────────────");
-    results.grammar.forEach((m) => {
-      lines.push(`  • ${m.message}`);
-      if (m.replacements.length) lines.push(`    Suggestion: ${m.replacements.join(", ")}`);
-    });
+    if (results.readability.wordCount != null) lines.push(`  Word Count:  ${results.readability.wordCount}`);
+    if (results.readability.sentenceCount != null) lines.push(`  Sentences:   ${results.readability.sentenceCount}`);
+    if (results.readability.avgReadingTime != null) lines.push(`  Avg Reading: ${results.readability.avgReadingTime}s`);
   }
 
   if (results.facts && results.facts.length > 0) {
@@ -253,57 +273,31 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Sentence Heatmap</h3>
           </div>
           <div className="flex items-center gap-4 mb-4 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--success))]" /> Clean</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(160,60%,55%)]" /> Low</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-primary" /> Clean</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(122,39%,49%)]" /> Low</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--warning))]" /> Medium</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive" /> High</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(0,72%,40%)]" /> Very High</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--orange))]" /> High</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive" /> Very High</span>
           </div>
           <SentenceHeatmap blocks={results.ai.blocks} />
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stats Grid — Only Plagiarism + Readability summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {results.plagiarism && (
           <StatCard label="Plagiarism" value={`${Math.round(results.plagiarism.score)}%`} icon={FileWarning} />
         )}
-        {results.readability?.fleschReadingEase != null && (
-          <StatCard label="Flesch Ease" value={results.readability.fleschReadingEase} icon={BookOpen} />
+        {results.readability?.wordCount != null && (
+          <StatCard label="Word Count" value={results.readability.wordCount} icon={Bot} />
         )}
-        {results.readability?.fleschGradeLevel != null && (
-          <StatCard label="Grade Level" value={results.readability.fleschGradeLevel} icon={BookOpen} />
-        )}
-        {results.readability?.gunningFoxIndex != null && (
-          <StatCard label="Gunning Fog" value={results.readability.gunningFoxIndex} icon={BookOpen} />
-        )}
-        {results.readability?.smogIndex != null && (
-          <StatCard label="SMOG Index" value={results.readability.smogIndex} icon={BookOpen} />
-        )}
-        {results.grammar && (
-          <StatCard label="Grammar Issues" value={results.grammar.length} icon={SpellCheck} />
+        {results.readability?.sentenceCount != null && (
+          <StatCard label="Sentences" value={results.readability.sentenceCount} icon={Bot} />
         )}
       </div>
 
-      {/* Grammar Details */}
-      {results.grammar && results.grammar.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <SpellCheck className="w-4 h-4 text-primary" />
-            <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Grammar & Spelling</h3>
-          </div>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {results.grammar.map((m, i) => (
-              <div key={i} className="p-3 rounded-lg bg-secondary border border-border">
-                <p className="text-xs text-foreground/80">{m.message}</p>
-                {m.replacements.length > 0 && (
-                  <p className="text-[10px] text-primary mt-1 font-medium">→ {m.replacements.join(", ")}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Grading Legend */}
+      <GradingLegend />
 
       {/* Fact Check */}
       {results.facts && results.facts.length > 0 && (
