@@ -1,4 +1,4 @@
-import { Bot, User, BookOpen } from "lucide-react";
+import { Bot, User, BookOpen, FileWarning } from "lucide-react";
 import type { ScanResults } from "@/pages/Index";
 
 interface ResultItem {
@@ -20,6 +20,12 @@ const resultSlots: ResultItem[] = [
     label: "Human Score",
     sublabel: "Probability of human authorship",
     getValue: (r) => r.ai ? `${Math.round((1 - r.ai.score) * 100)}%` : null,
+  },
+  {
+    icon: FileWarning,
+    label: "Plagiarism Score",
+    sublabel: "Content similarity detected",
+    getValue: (r) => r.plagiarism ? `${Math.round(r.plagiarism.score)}%` : null,
   },
   {
     icon: BookOpen,
@@ -47,7 +53,7 @@ const ResultsSidebar = ({ results, isScanning }: ResultsSidebarProps) => {
         </h3>
       </div>
 
-      <div className="flex-1 px-6 py-6 space-y-6">
+      <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto">
         {resultSlots.map((slot) => {
           const value = results ? slot.getValue(results) : null;
 
@@ -76,6 +82,45 @@ const ResultsSidebar = ({ results, isScanning }: ResultsSidebarProps) => {
             </div>
           );
         })}
+
+        {/* Block-by-block AI highlight */}
+        {results?.aiBlocks && results.aiBlocks.length > 0 && (
+          <div className="bg-navy-light rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+                <Bot className="w-4.5 h-4.5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-navy-foreground">Block-by-Block Analysis</p>
+                <p className="text-xs text-navy-foreground/50">AI probability per text block</p>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {results.aiBlocks.map((block, i) => {
+                const pct = Math.round(block.score * 100);
+                const isHigh = pct >= 70;
+                const isMed = pct >= 40 && pct < 70;
+                return (
+                  <div key={i} className="rounded-lg p-3 border border-navy-foreground/10">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-medium text-navy-foreground/60">Block {i + 1}</span>
+                      <span className={`text-xs font-bold ${isHigh ? 'text-destructive' : isMed ? 'text-yellow-400' : 'text-primary'}`}>
+                        {pct}% AI
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-navy-foreground/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${isHigh ? 'bg-destructive' : isMed ? 'bg-yellow-400' : 'bg-primary'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-navy-foreground/40 mt-1.5 line-clamp-2">{block.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="px-6 py-4 border-t border-navy-light">
