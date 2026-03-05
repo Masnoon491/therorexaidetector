@@ -1,5 +1,6 @@
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
+import Footer from "@/components/Footer";
 import ContentEditor from "@/components/ContentEditor";
 import ResultsPanel from "@/components/ResultsPanel";
 import ScanningOverlay from "@/components/ScanningOverlay";
@@ -146,19 +147,18 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <TopNav />
       <ScanningOverlay isScanning={isScanning} />
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {/* Editor Section */}
-        <div className="bg-card rounded-2xl border border-border p-6 lg:p-8">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
+        <div className="bg-card rounded-2xl border border-border p-6 lg:p-8 shadow-sm">
           <ContentEditor onScan={handleScan} isScanning={isScanning} />
         </div>
-
-        {/* Results Section */}
         <ResultsPanel results={results} />
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
