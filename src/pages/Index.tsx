@@ -39,7 +39,10 @@ const Index = () => {
         return;
       }
 
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) {
+        const msg = typeof data.error === 'string' ? data.error : JSON.stringify(data.details || data.error);
+        throw new Error(msg);
+      }
 
       setResults(data);
     } catch (err: any) {
