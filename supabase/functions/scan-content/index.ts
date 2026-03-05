@@ -3,6 +3,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+type OriginalityResponse = {
+  status: number;
+  data: any;
+};
+
+async function postToOriginality(apiKey: string, payload: Record<string, unknown>): Promise<OriginalityResponse> {
+  const response = await fetch('https://api.originality.ai/api/v3/scan', {
+    method: 'POST',
+    headers: {
+      'X-OAI-API-KEY': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await response.text();
+  let data: any = { raw: text };
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    // keep raw text if not JSON
+  }
+
+  return { status: response.status, data };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -19,7 +46,7 @@ Deno.serve(async (req) => {
 
     const { content, title } = await req.json();
 
-    if (!content || content.length < 50) {
+    if (!content || typeof content !== 'string' || content.length < 50) {
       return new Response(JSON.stringify({ error: 'Content must be at least 50 characters' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -28,66 +55,51 @@ Deno.serve(async (req) => {
 
     const scanTitle = title || `Scan - ${new Date().toISOString()}`;
 
-    const payload = {
+    // 1) Primary payload format requested by user
+    const primaryPayload = {
       content,
       title: scanTitle,
       check_ai: true,
       check_plagiarism: true,
       check_readability: true,
       check_grammar: true,
-      check_facts: true,
-      check_contentOptimizer: true,
-      optimizerQuery: 'content authenticity',
-      optimizerCountry: 'United States',
-      optimizerDevice: 'Desktop',
-      optimizerPublishingDomain: 'https://example.com',
-      excludedUrls: [],
       storeScan: true,
       aiModelVersion: 'lite',
     };
 
-    console.log('Sending scan request with title:', scanTitle, 'content length:', content.length);
+    let result = await postToOriginality(apiKey, primaryPayload);
 
-    const response = await fetch('https://api.originality.ai/api/v3/scan', {
-      method: 'POST',
-      headers: {
-        'X-OAI-API-KEY': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const responseText = await response.text();
-    console.log('Originality API status:', response.status, 'response:', responseText);
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid API response', details: responseText }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // 2) Fallback for accounts expecting scanProperties schema
+    const message = (result.data?.message || result.data?.error || '').toString().toLowerCase();
+    if (result.status === 422 && message.includes('scan properties')) {
+      const fallbackPayload = {
+        content,
+        title: scanTitle,
+        scanProperties: ['ai', 'plagiarism', 'readability', 'grammar'],
+        storeScan: true,
+        aiModelVersion: 'lite',
+      };
+      result = await postToOriginality(apiKey, fallbackPayload);
     }
 
-    if (!response.ok) {
-      const isRateLimit = response.status === 429;
-      return new Response(JSON.stringify({ 
-        error: data?.message || data?.error || 'Scan failed', 
+    if (result.status >= 400) {
+      const isRateLimit = result.status === 429;
+      return new Response(JSON.stringify({
+        error: result.data?.message || result.data?.error || 'Scan failed',
         isRateLimit,
-        details: data 
+        details: result.data,
       }), {
-        status: response.status,
+        status: result.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(result.data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Edge function error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
