@@ -15,20 +15,20 @@ const Footer = () => {
           </p>
           <div className="flex items-center gap-6 mt-2">
             <a
-              href="https://wa.me/"
+              href="https://wa.me/8801819185751"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-[11px] text-navy-foreground/60 hover:text-primary transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              WhatsApp
+              01819185751
             </a>
             <a
-              href="mailto:contact@theorex.com"
+              href="mailto:salestheorex@gmail.com"
               className="flex items-center gap-1.5 text-[11px] text-navy-foreground/60 hover:text-primary transition-colors"
             >
               <Mail className="w-3.5 h-3.5" />
-              contact@theorex.com
+              salestheorex@gmail.com
             </a>
           </div>
           <p className="text-[10px] text-navy-foreground/30 mt-3">
