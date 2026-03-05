@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,82 +6,64 @@
 
 @layer base {
   :root {
-    --background: 220 14% 96%;
-    --foreground: 222 47% 11%;
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 222 40% 12%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 222 40% 12%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 222 47% 11%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 172 66% 50%;
+    --primary-foreground: 222 47% 8%;
 
-    --secondary: 220 13% 91%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 222 30% 18%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 222 30% 15%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 220 13% 91%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 172 66% 50%;
+    --accent-foreground: 222 47% 8%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 222 47% 11%;
+    --border: 222 25% 18%;
+    --input: 222 25% 18%;
+    --ring: 172 66% 50%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --navy: 222 47% 11%;
+    --navy: 222 47% 8%;
     --navy-foreground: 210 40% 98%;
-    --navy-light: 220 26% 18%;
+    --navy-light: 222 30% 15%;
 
-    --success: 142 71% 45%;
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --surface: 0 0% 100%;
-    --surface-raised: 220 14% 98%;
+    --teal: 172 66% 50%;
+    --teal-dim: 172 40% 25%;
+    --teal-glow: 172 66% 60%;
 
-    --skeleton-base: 220 13% 91%;
-    --skeleton-shine: 220 14% 96%;
+    --surface: 222 40% 12%;
+    --surface-raised: 222 35% 16%;
 
-    --sidebar-background: 222 47% 11%;
+    --skeleton-base: 222 30% 15%;
+    --skeleton-shine: 222 30% 22%;
+
+    --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 220 26% 18%;
+    --sidebar-primary: 172 66% 50%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 222 30% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 26% 22%;
-    --sidebar-ring: 0 0% 100%;
-  }
-
-  .dark {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
-    --card: 220 26% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 26% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 220 26% 18%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 26% 18%;
-    --muted-foreground: 220 9% 60%;
-    --accent: 220 26% 18%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 26% 18%;
-    --input: 220 26% 18%;
-    --ring: 0 0% 100%;
+    --sidebar-border: 222 25% 18%;
+    --sidebar-ring: 172 66% 50%;
   }
 }
 
@@ -91,7 +73,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 }
 
@@ -109,5 +91,43 @@
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out forwards;
+  }
+
+  @keyframes progress-fill {
+    from { width: 0%; }
+  }
+  .animate-progress-fill {
+    animation: progress-fill 0.8s ease-out forwards;
+  }
+
+  @keyframes gauge-fill {
+    from { stroke-dashoffset: 251.2; }
+  }
+  .animate-gauge {
+    animation: gauge-fill 1.2s ease-out forwards;
   }
 }

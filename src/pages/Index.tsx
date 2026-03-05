@@ -1,7 +1,8 @@
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
 import ContentEditor from "@/components/ContentEditor";
-import ResultsSidebar from "@/components/ResultsSidebar";
+import ResultsPanel from "@/components/ResultsPanel";
+import ScanningOverlay from "@/components/ScanningOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,14 +28,12 @@ export interface FactCheck {
 
 export interface ScanResults {
   ai?: {
-    score: number;          // confidence.AI (0-1)
-    originalScore: number;  // confidence.Original (0-1)
-    classification: string; // "AI" or "Original"
+    score: number;
+    originalScore: number;
+    classification: string;
     blocks: AiBlock[];
   };
-  plagiarism?: {
-    score: number;
-  };
+  plagiarism?: { score: number };
   readability?: {
     fleschReadingEase?: number;
     fleschGradeLevel?: number;
@@ -52,7 +51,6 @@ function normalizeResponse(data: any): ScanResults {
   const r = data?.results || data;
   const normalized: ScanResults = {};
 
-  // AI detection
   if (r?.ai) {
     const aiConf = r.ai.confidence?.AI ?? r.ai.score;
     const origConf = r.ai.confidence?.Original ?? (1 - (aiConf || 0));
@@ -69,20 +67,13 @@ function normalizeResponse(data: any): ScanResults {
       }
     }
 
-    normalized.ai = {
-      score: Number(aiConf || 0),
-      originalScore: Number(origConf || 0),
-      classification,
-      blocks,
-    };
+    normalized.ai = { score: Number(aiConf || 0), originalScore: Number(origConf || 0), classification, blocks };
   }
 
-  // Plagiarism
   if (r?.plagiarism?.score != null) {
     normalized.plagiarism = { score: Number(r.plagiarism.score) };
   }
 
-  // Readability
   if (r?.readability) {
     const rd = r.readability.readability || {};
     const ts = r.readability.text_stats || {};
@@ -97,7 +88,6 @@ function normalizeResponse(data: any): ScanResults {
     };
   }
 
-  // Grammar
   if (Array.isArray(r?.grammarSpelling?.matches)) {
     normalized.grammar = r.grammarSpelling.matches.map((m: any) => ({
       message: m.message || "",
@@ -110,7 +100,6 @@ function normalizeResponse(data: any): ScanResults {
     }));
   }
 
-  // Facts
   if (Array.isArray(r?.facts)) {
     normalized.facts = r.facts.map((f: any) => ({
       fact: f.fact || "",
@@ -157,13 +146,18 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <TopNav />
-      <div className="flex flex-1 overflow-hidden">
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+      <ScanningOverlay isScanning={isScanning} />
+
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+        {/* Editor Section */}
+        <div className="bg-card rounded-2xl border border-border p-6 lg:p-8">
           <ContentEditor onScan={handleScan} isScanning={isScanning} />
-        </main>
-        <ResultsSidebar results={results} isScanning={isScanning} />
+        </div>
+
+        {/* Results Section */}
+        <ResultsPanel results={results} />
       </div>
     </div>
   );
