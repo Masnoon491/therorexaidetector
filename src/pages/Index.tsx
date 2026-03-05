@@ -1,12 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 import ContentEditor from "@/components/ContentEditor";
 import ResultsPanel from "@/components/ResultsPanel";
 import ScanningOverlay from "@/components/ScanningOverlay";
+import ScanHistoryPanel from "@/components/ScanHistoryPanel";
+import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, getFreeWordsUsed, addFreeWordsUsed, FREE_WORD_LIMIT } from "@/contexts/AuthContext";
+import { useCredits, calculateCredits } from "@/hooks/useCredits";
+import { useScanHistory } from "@/hooks/useScanHistory";
 
 /* ─── Data Types ─── */
 export interface AiBlock {
@@ -117,11 +123,16 @@ function normalizeResponse(data: any): ScanResults {
 const Index = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResults | null>(null);
+  const [activeView, setActiveView] = useState<"editor" | "history">("editor");
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const { balance, deductCredits, refetch: refetchCredits } = useCredits();
+  const { logScan } = useScanHistory();
+  const navigate = useNavigate();
 
   const handleScan = async (text: string) => {
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+    const creditsNeeded = calculateCredits(wordCount);
 
     if (!user) {
       const used = getFreeWordsUsed();
@@ -132,6 +143,16 @@ const Index = () => {
           description: remaining > 0
             ? `You have ${remaining} free words remaining. This text has ${wordCount} words. Please register for unlimited scans.`
             : "You've used your free 1,000 words. Please register for unlimited scans.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Check credits for logged-in users
+      if (balance !== null && balance < creditsNeeded) {
+        toast({
+          title: "Insufficient Credits",
+          description: `This scan requires ${creditsNeeded} credits but you only have ${balance}. Please purchase more credits.`,
           variant: "destructive",
         });
         return;
@@ -160,9 +181,25 @@ const Index = () => {
 
       if (!user) {
         addFreeWordsUsed(wordCount);
+      } else {
+        // Deduct credits and log scan
+        await deductCredits(creditsNeeded);
+        refetchCredits();
       }
 
-      setResults(normalizeResponse(data));
+      const normalized = normalizeResponse(data);
+      setResults(normalized);
+
+      // Log to scan history for authenticated users
+      if (user) {
+        await logScan({
+          title: `Scan - ${new Date().toLocaleString()}`,
+          word_count: wordCount,
+          ai_score: normalized.ai?.score ?? null,
+          plagiarism_score: normalized.plagiarism?.score ?? null,
+          credits_used: creditsNeeded,
+        });
+      }
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });
     } finally {
@@ -175,12 +212,39 @@ const Index = () => {
       <TopNav />
       <ScanningOverlay isScanning={isScanning} />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
-        <div className="bg-card rounded-lg border border-border p-6 lg:p-8" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <ContentEditor onScan={handleScan} isScanning={isScanning} />
-        </div>
-        <ResultsPanel results={results} />
-      </main>
+      <div className="flex-1 flex">
+        {user ? (
+          <SidebarProvider>
+            <div className="min-h-0 flex w-full">
+              <AppSidebar activeView={activeView} onViewChange={setActiveView} />
+              <div className="flex-1 flex flex-col min-w-0">
+                <div className="h-10 flex items-center border-b border-border bg-card px-2">
+                  <SidebarTrigger />
+                </div>
+                <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
+                  {activeView === "editor" ? (
+                    <>
+                      <div className="bg-card rounded-lg border border-border p-6 lg:p-8" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                        <ContentEditor onScan={handleScan} isScanning={isScanning} />
+                      </div>
+                      <ResultsPanel results={results} />
+                    </>
+                  ) : (
+                    <ScanHistoryPanel />
+                  )}
+                </main>
+              </div>
+            </div>
+          </SidebarProvider>
+        ) : (
+          <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
+            <div className="bg-card rounded-lg border border-border p-6 lg:p-8" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+              <ContentEditor onScan={handleScan} isScanning={isScanning} />
+            </div>
+            <ResultsPanel results={results} />
+          </main>
+        )}
+      </div>
 
       <Footer />
     </div>
