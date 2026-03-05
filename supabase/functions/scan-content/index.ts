@@ -26,35 +26,51 @@ Deno.serve(async (req) => {
       });
     }
 
+    const scanTitle = title || `Scan - ${new Date().toISOString()}`;
+
+    // Build form data — the Originality.ai API expects form-encoded or multipart data
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('title', scanTitle);
+    formData.append('check_ai', 'true');
+    formData.append('check_plagiarism', 'true');
+    formData.append('check_readability', 'true');
+    formData.append('check_grammar', 'true');
+    formData.append('check_facts', 'false');
+    formData.append('check_contentOptimizer', 'false');
+    formData.append('storeScan', 'true');
+    formData.append('aiModelVersion', 'lite');
+
+    console.log('Sending scan request with title:', scanTitle, 'content length:', content.length);
+
     const response = await fetch('https://api.originality.ai/api/v3/scan', {
       method: 'POST',
       headers: {
         'X-OAI-API-KEY': apiKey,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        content,
-        title: title || `Scan - ${new Date().toISOString()}`,
-        check_ai: true,
-        check_plagiarism: true,
-        check_readability: true,
-        check_grammar: true,
-        check_facts: false,
-        check_contentOptimizer: false,
-        optimizerQuery: "",
-        optimizerCountry: "United States",
-        optimizerDevice: "desktop",
-        optimizerPublishingDomain: "",
-        storeScan: true,
-        aiModelVersion: 'lite',
-      }),
+      body: formData,
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    console.log('Originality API status:', response.status, 'response:', responseText);
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid API response', details: responseText }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!response.ok) {
-      const isRateLimit = response.status === 429 || (data?.error?.includes?.('rate') ?? false);
-      return new Response(JSON.stringify({ error: data?.error || 'Scan failed', isRateLimit }), {
+      const isRateLimit = response.status === 429;
+      return new Response(JSON.stringify({ 
+        error: data?.message || data?.error || 'Scan failed', 
+        isRateLimit,
+        details: data 
+      }), {
         status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -64,6 +80,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('Edge function error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
