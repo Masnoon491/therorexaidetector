@@ -29,7 +29,7 @@ export function addFreeWordsUsed(count: number) {
   localStorage.setItem(WORD_LIMIT_KEY, String(current + count));
 }
 
-export const FREE_WORD_LIMIT = 1000;
+export const FREE_WORD_LIMIT = 100;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

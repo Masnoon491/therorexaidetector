@@ -83,7 +83,7 @@ const Index = () => {
       const used = getFreeWordsUsed();
       if (used + wordCount > FREE_WORD_LIMIT) {
         const remaining = Math.max(0, FREE_WORD_LIMIT - used);
-        toast({ title: "Free limit reached", description: remaining > 0 ? `You have ${remaining} free words remaining. Please register for unlimited scans.` : "You've used your free 1,000 words. Please register for unlimited scans.", variant: "destructive" });
+        toast({ title: "Free limit reached", description: remaining > 0 ? `You have ${remaining} free words remaining. Please register for unlimited scans.` : "You've used your free 100 words. Please register for unlimited scans.", variant: "destructive" });
         return;
       }
     } else {
