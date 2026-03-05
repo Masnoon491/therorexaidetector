@@ -73,14 +73,14 @@ const TopNav = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/auth?mode=login")}
                 className="text-xs font-semibold border-foreground/20 text-foreground hover:bg-muted"
               >
                 Login
               </Button>
               <Button
                 size="sm"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/auth?mode=signup")}
                 className="text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Sign Up
