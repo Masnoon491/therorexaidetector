@@ -202,7 +202,7 @@ const Index = () => {
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
         <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} />
+          <ContentEditor ref={editorRef} maxWords={100} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} />
         </div>
 
         {/* Simple scan button for non-logged in */}

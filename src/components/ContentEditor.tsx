@@ -5,10 +5,9 @@ import { useToast } from "@/hooks/use-toast";
 import { calculateCredits } from "@/hooks/useCredits";
 import mammoth from "mammoth";
 
-const MAX_WORDS = 10000;
-
 interface ContentEditorProps {
   onTextChange?: (text: string) => void;
+  maxWords?: number;
 }
 
 export interface ContentEditorRef {
@@ -58,7 +57,7 @@ function truncateToWordLimit(text: string, limit: number): { text: string; trunc
   return { text: words.slice(0, limit).join(" "), truncated: true };
 }
 
-const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onTextChange }, ref) => {
+const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onTextChange, maxWords = 10000 }, ref) => {
   const [text, setText] = useState("");
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +72,14 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
   }));
 
   const handleChange = (val: string) => {
+    // Enforce word limit
+    const words = val.trim().split(/\s+/).filter(Boolean);
+    if (words.length > maxWords) {
+      const truncated = words.slice(0, maxWords).join(" ");
+      setText(truncated);
+      onTextChange?.(truncated);
+      return;
+    }
     setText(val);
     onTextChange?.(val);
   };
@@ -98,11 +105,11 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
         return;
       }
 
-      const { text: finalText, truncated } = truncateToWordLimit(cleaned, MAX_WORDS);
+      const { text: finalText, truncated } = truncateToWordLimit(cleaned, maxWords);
       handleChange(finalText);
 
       if (truncated) {
-        toast({ title: "Document Truncated", description: "Document truncated to the first 10,000 words." });
+        toast({ title: "Document Truncated", description: `Document truncated to the first ${maxWords.toLocaleString()} words.` });
       }
     } catch (err: any) {
       console.error("File import error:", err);
