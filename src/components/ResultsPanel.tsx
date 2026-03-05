@@ -2,6 +2,15 @@ import { Download, Bot, ShieldCheck, BookOpen, SpellCheck, FileWarning, AlertTri
 import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/pages/Index";
 
+/* ─── Risk tier helper ─── */
+function getRiskTier(pct: number) {
+  if (pct <= 10) return { label: "CLEAN", bg: "bg-[hsl(var(--success))]", text: "text-[hsl(var(--success-foreground))]" };
+  if (pct <= 30) return { label: "LOW", bg: "bg-[hsl(160,60%,55%)]", text: "text-[hsl(var(--success-foreground))]" };
+  if (pct <= 60) return { label: "MEDIUM", bg: "bg-[hsl(var(--warning))]", text: "text-[hsl(var(--warning-foreground))]" };
+  if (pct <= 85) return { label: "HIGH", bg: "bg-destructive", text: "text-destructive-foreground" };
+  return { label: "VERY HIGH", bg: "bg-[hsl(0,72%,40%)]", text: "text-[hsl(var(--destructive-foreground))]" };
+}
+
 /* ─── Circular Gauge ─── */
 function CircularGauge({ value, label, color }: { value: number; label: string; color: "danger" | "success" }) {
   const pct = Math.round(value * 100);
@@ -39,14 +48,14 @@ function GradeBadge({ score }: { score: number }) {
   let grade: string;
   let gradeColor: string;
   if (pct <= 15) { grade = "A"; gradeColor = "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]"; }
-  else if (pct <= 30) { grade = "B"; gradeColor = "bg-[hsl(var(--success))]/80 text-[hsl(var(--success-foreground))]"; }
+  else if (pct <= 30) { grade = "B"; gradeColor = "bg-[hsl(160,60%,55%)] text-[hsl(var(--success-foreground))]"; }
   else if (pct <= 50) { grade = "C"; gradeColor = "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]"; }
   else if (pct <= 75) { grade = "D"; gradeColor = "bg-destructive/80 text-destructive-foreground"; }
   else { grade = "F"; gradeColor = "bg-destructive text-destructive-foreground"; }
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className={`w-16 h-16 rounded-2xl ${gradeColor} flex items-center justify-center shadow-lg`}>
+      <div className={`w-16 h-16 rounded-xl ${gradeColor} flex items-center justify-center shadow-md`}>
         <span className="text-3xl font-extrabold">{grade}</span>
       </div>
       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Grade</span>
@@ -57,28 +66,36 @@ function GradeBadge({ score }: { score: number }) {
 /* ─── Sentence Heatmap ─── */
 function SentenceHeatmap({ blocks }: { blocks: { text: string; fake: number; real: number }[] }) {
   return (
-    <div className="space-y-1">
-      {blocks.map((block, i) => {
-        const pct = Math.round(block.fake * 100);
-        let bg: string;
-        let border: string;
-        let badge: string;
-        if (pct >= 70) {
-          bg = "bg-destructive/10"; border = "border-destructive/30"; badge = "bg-destructive text-destructive-foreground";
-        } else if (pct >= 40) {
-          bg = "bg-[hsl(var(--warning))]/10"; border = "border-[hsl(var(--warning))]/30"; badge = "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]";
-        } else {
-          bg = "bg-[hsl(var(--success))]/10"; border = "border-[hsl(var(--success))]/30"; badge = "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]";
-        }
-        return (
-          <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${bg} ${border} transition-all hover:opacity-90`}>
-            <span className={`shrink-0 mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-md ${badge}`}>
-              {pct}%
-            </span>
-            <p className="text-xs text-foreground/80 leading-relaxed">{block.text}</p>
-          </div>
-        );
-      })}
+    <div className="overflow-hidden rounded-lg border border-border">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-muted">
+            <th className="text-left py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-16">#</th>
+            <th className="text-left py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Sentence</th>
+            <th className="text-center py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-20">AI %</th>
+            <th className="text-center py-2 px-3 font-semibold text-muted-foreground uppercase tracking-wider w-24">Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          {blocks.map((block, i) => {
+            const pct = Math.round(block.fake * 100);
+            const tier = getRiskTier(pct);
+            const rowBg = i % 2 === 0 ? "bg-card" : "bg-secondary/50";
+            return (
+              <tr key={i} className={`${rowBg} border-t border-border`}>
+                <td className="py-2.5 px-3 font-mono text-muted-foreground">{i + 1}</td>
+                <td className="py-2.5 px-3 text-foreground/80 leading-relaxed">{block.text}</td>
+                <td className="py-2.5 px-3 text-center font-mono font-bold text-foreground">{pct}%</td>
+                <td className="py-2.5 px-3 text-center">
+                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md ${tier.bg} ${tier.text}`}>
+                    {tier.label}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -86,12 +103,12 @@ function SentenceHeatmap({ blocks }: { blocks: { text: string; fake: number; rea
 /* ─── Stat Card ─── */
 function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ElementType }) {
   return (
-    <div className="bg-muted/50 rounded-xl p-4 flex items-center gap-3">
+    <div className="bg-secondary rounded-xl p-4 flex items-center gap-3">
       <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
         <Icon className="w-4 h-4 text-primary" />
       </div>
       <div>
-        <p className="text-lg font-extrabold text-foreground font-mono tabular-nums">{value}</p>
+        <p className="text-lg font-extrabold text-[hsl(var(--navy))] font-mono tabular-nums">{value}</p>
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
       </div>
     </div>
@@ -102,8 +119,9 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: string |
 function downloadReport(results: ScanResults) {
   const lines: string[] = [
     "═══════════════════════════════════════════",
-    "           THEOREX AI TEXT DETECTOR         ",
-    "              ANALYSIS REPORT               ",
+    "           THEOREX CONSULTING              ",
+    "      AI AUTHENTICITY INTELLIGENCE         ",
+    "            ANALYSIS REPORT                ",
     "═══════════════════════════════════════════",
     "",
     `Date: ${new Date().toLocaleString()}`,
@@ -121,7 +139,9 @@ function downloadReport(results: ScanResults) {
     if (results.ai.blocks.length > 0) {
       lines.push("  SENTENCE-LEVEL ANALYSIS:");
       results.ai.blocks.forEach((b, i) => {
-        lines.push(`    [${Math.round(b.fake * 100)}% AI] ${b.text}`);
+        const pct = Math.round(b.fake * 100);
+        const tier = getRiskTier(pct);
+        lines.push(`    ${i + 1}. [${tier.label} ${pct}%] ${b.text}`);
       });
     }
   }
@@ -169,7 +189,8 @@ function downloadReport(results: ScanResults) {
 
   lines.push("");
   lines.push("═══════════════════════════════════════════");
-  lines.push("  Generated by Theorex AI Text Detector    ");
+  lines.push("  Generated by Theorex Consulting          ");
+  lines.push("  AI Authenticity Intelligence              ");
   lines.push("═══════════════════════════════════════════");
 
   const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -190,19 +211,19 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
   if (!results) return null;
 
   return (
-    <div className="space-y-8 animate-fade-up">
+    <div className="space-y-6 animate-fade-up">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-foreground tracking-tight">Analysis Report</h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <h2 className="text-lg font-extrabold text-foreground tracking-tight">Analysis Report</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Scanned on {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         <Button
           onClick={() => downloadReport(results)}
           variant="outline"
-          className="gap-2 font-semibold border-primary/30 text-primary hover:bg-primary/10"
+          className="gap-2 font-semibold border-primary/40 text-primary hover:bg-primary/5"
         >
           <Download className="w-4 h-4" />
           Download Report
@@ -211,7 +232,7 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* AI Detection — Gauges + Grade */}
       {results.ai && (
-        <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <Bot className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">AI Detection</h3>
@@ -226,15 +247,17 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* Sentence Heatmap */}
       {results.ai?.blocks && results.ai.blocks.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Sentence Heatmap</h3>
           </div>
           <div className="flex items-center gap-4 mb-4 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--success))]" /> Human</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--warning))]" /> Mixed</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive" /> AI Generated</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--success))]" /> Clean</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(160,60%,55%)]" /> Low</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(var(--warning))]" /> Medium</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-destructive" /> High</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[hsl(0,72%,40%)]" /> Very High</span>
           </div>
           <SentenceHeatmap blocks={results.ai.blocks} />
         </div>
@@ -264,17 +287,17 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* Grammar Details */}
       {results.grammar && results.grammar.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <SpellCheck className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Grammar & Spelling</h3>
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {results.grammar.map((m, i) => (
-              <div key={i} className="p-3 rounded-lg bg-muted/50 border border-border">
+              <div key={i} className="p-3 rounded-lg bg-secondary border border-border">
                 <p className="text-xs text-foreground/80">{m.message}</p>
                 {m.replacements.length > 0 && (
-                  <p className="text-[10px] text-[hsl(var(--success))] mt-1 font-medium">→ {m.replacements.join(", ")}</p>
+                  <p className="text-[10px] text-primary mt-1 font-medium">→ {m.replacements.join(", ")}</p>
                 )}
               </div>
             ))}
@@ -284,14 +307,14 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
 
       {/* Fact Check */}
       {results.facts && results.facts.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="w-4 h-4 text-primary" />
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Fact Check</h3>
           </div>
           <div className="space-y-2 max-h-56 overflow-y-auto">
             {results.facts.map((f, i) => (
-              <div key={i} className="p-3 rounded-lg bg-muted/50 border border-border">
+              <div key={i} className="p-3 rounded-lg bg-secondary border border-border">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">Claim {i + 1}</span>
                   <span className={`text-[10px] font-bold ${f.truthfulness === "0%" ? "text-muted-foreground" : "text-[hsl(var(--warning))]"}`}>

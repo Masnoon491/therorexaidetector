@@ -16,11 +16,11 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+      <div className="mb-5">
+        <h1 className="text-xl font-extrabold text-foreground tracking-tight">
           Content Analysis
         </h1>
-        <p className="text-sm text-muted-foreground mt-1.5">
+        <p className="text-sm text-muted-foreground mt-1">
           Paste your text to detect AI-generated content, plagiarism, readability issues, and more.
         </p>
       </div>
@@ -30,13 +30,13 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))}
           placeholder="Paste or type your content here…"
-          className="w-full h-full min-h-[340px] resize-none rounded-xl border border-border bg-card p-5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all font-sans"
+          className="w-full h-full min-h-[300px] resize-none rounded-lg border border-border bg-card p-5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all font-sans"
         />
       </div>
 
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-3">
-          <div className="w-36 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="w-32 h-1.5 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full bg-primary/60 transition-all duration-300"
               style={{ width: `${charPercent}%` }}
@@ -50,7 +50,7 @@ const ContentEditor = ({ onScan, isScanning }: ContentEditorProps) => {
         <Button
           onClick={() => onScan(text)}
           disabled={charCount < 50 || isScanning}
-          className="gap-2 font-bold bg-gradient-to-r from-primary to-[hsl(var(--teal-glow))] text-primary-foreground hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 px-6"
+          className="gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-md px-6"
         >
           <ScanSearch className="w-4 h-4" />
           {isScanning ? "Scanning…" : "Run Analysis"}
