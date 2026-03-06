@@ -399,6 +399,44 @@ const Admin = () => {
           </div>
         </div>
 
+        {/* Global Scan Audit */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <ScanSearch className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">Global Scan Audit</h2>
+          </div>
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
+            {scanAudit.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">No scans recorded yet.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User Email</TableHead>
+                    <TableHead>Scan Date</TableHead>
+                    <TableHead className="text-right">Words Scanned</TableHead>
+                    <TableHead className="text-right">Credits Deducted</TableHead>
+                    <TableHead className="text-right">AI Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scanAudit.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-sm font-medium text-foreground">{s.user_email}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{formatDateBD(s.scan_date)}</TableCell>
+                      <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">{s.word_count.toLocaleString()}</TableCell>
+                      <TableCell className="text-sm font-bold font-mono tabular-nums text-right text-destructive">{s.credits_used}</TableCell>
+                      <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">
+                        {s.ai_score !== null ? `${Math.round(s.ai_score * 100)}%` : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </div>
+
         {/* Transactions Table */}
         <h2 className="text-lg font-bold text-foreground mb-3">Payment Transactions</h2>
         <div className="bg-card rounded-lg border border-border overflow-x-auto">
