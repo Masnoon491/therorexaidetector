@@ -41,6 +41,7 @@ interface UserSummary {
 interface ScanAuditEntry {
   id: string;
   user_email: string;
+  document_name: string;
   scan_date: string;
   word_count: number;
   credits_used: number;
@@ -182,6 +183,7 @@ const Admin = () => {
         scans.map((s: any) => ({
           id: s.id,
           user_email: emailMap.get(s.user_id) || "Unknown",
+          document_name: s.document_name || s.title || "Untitled",
           scan_date: s.created_at,
           word_count: s.word_count,
           credits_used: s.credits_used,
@@ -412,18 +414,20 @@ const Admin = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User Email</TableHead>
-                    <TableHead>Scan Date</TableHead>
-                    <TableHead className="text-right">Words Scanned</TableHead>
-                    <TableHead className="text-right">Credits Deducted</TableHead>
-                    <TableHead className="text-right">AI Score</TableHead>
+                     <TableHead>User Email</TableHead>
+                     <TableHead>Document Name</TableHead>
+                     <TableHead>Scan Date</TableHead>
+                     <TableHead className="text-right">Words Scanned</TableHead>
+                     <TableHead className="text-right">Credits Deducted</TableHead>
+                     <TableHead className="text-right">AI Score</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {scanAudit.map((s) => (
                     <TableRow key={s.id}>
-                      <TableCell className="text-sm font-medium text-foreground">{s.user_email}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{formatDateBD(s.scan_date)}</TableCell>
+                       <TableCell className="text-sm font-medium text-foreground">{s.user_email}</TableCell>
+                       <TableCell className="text-sm text-foreground max-w-[180px] truncate">{s.document_name}</TableCell>
+                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{formatDateBD(s.scan_date)}</TableCell>
                       <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">{s.word_count.toLocaleString()}</TableCell>
                       <TableCell className="text-sm font-bold font-mono tabular-nums text-right text-destructive">{s.credits_used}</TableCell>
                       <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">

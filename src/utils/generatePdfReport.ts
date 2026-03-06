@@ -8,6 +8,7 @@ interface ReportMeta {
   ipAddress: string | null;
   wordCount: number;
   creditsUsed: number;
+  documentName?: string;
 }
 
 function getRiskLabel(pct: number) {
@@ -73,9 +74,9 @@ export function generatePdfReport(results: ScanResults, meta: ReportMeta) {
 
   // Details box
   doc.setFillColor(LIGHT);
-  doc.roundedRect(MARGIN, y, CW, 52, 3, 3, "F");
+  doc.roundedRect(MARGIN, y, CW, 61, 3, 3, "F");
   doc.setDrawColor("#DEE2E6");
-  doc.roundedRect(MARGIN, y, CW, 52, 3, 3, "S");
+  doc.roundedRect(MARGIN, y, CW, 61, 3, 3, "S");
   y += 10;
 
   const detailLeft = MARGIN + 10;
@@ -83,6 +84,7 @@ export function generatePdfReport(results: ScanResults, meta: ReportMeta) {
   const lineH = 9;
 
   const details: [string, string][] = [
+    ["Document:", meta.documentName || "Untitled Document"],
     ["Audit ID:", meta.auditId],
     ["Scan Date:", formatDateBD(meta.scanDate)],
     ["Auditor:", "Theorex AI Detector"],
