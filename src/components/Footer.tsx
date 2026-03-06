@@ -1,9 +1,8 @@
-import { forwardRef } from "react";
 import { Mail, MessageCircle } from "lucide-react";
 
-const Footer = forwardRef<HTMLElement>((_, ref) => {
+const Footer = () => {
   return (
-    <footer ref={ref} className="border-t border-border bg-card mt-12">
+    <footer className="border-t border-border bg-card mt-12">
       <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col items-center gap-3 text-center">
         <div className="flex items-baseline gap-1.5">
           <span className="text-sm font-extrabold tracking-tight text-foreground">
@@ -41,8 +40,6 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </footer>
   );
-});
-
-Footer.displayName = "Footer";
+};
 
 export default Footer;

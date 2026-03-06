@@ -1,4 +1,3 @@
-import { forwardRef } from "react";
 import { History, FileText } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { formatDateBD } from "@/utils/dateFormat";
@@ -13,11 +12,11 @@ function getRiskLabel(score: number | null) {
   return { label: "VERY HIGH", className: "bg-[hsl(4,74%,38%)] text-destructive-foreground" };
 }
 
-const ScanHistoryPanel = forwardRef<HTMLDivElement>((_, ref) => {
+const ScanHistoryPanel = () => {
   const { history, loading } = useScanHistory();
 
   return (
-    <div ref={ref} className="space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
           <History className="w-5 h-5 text-primary" />
@@ -90,8 +89,6 @@ const ScanHistoryPanel = forwardRef<HTMLDivElement>((_, ref) => {
       )}
     </div>
   );
-});
-
-ScanHistoryPanel.displayName = "ScanHistoryPanel";
+};
 
 export default ScanHistoryPanel;
