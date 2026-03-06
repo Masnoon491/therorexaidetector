@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, Loader2, ShieldAlert, Database } from "lucide-react";
+import { Check, Loader2, ShieldAlert, Database, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Transaction {
@@ -26,6 +26,14 @@ interface Transaction {
   user_email?: string;
 }
 
+interface UserSummary {
+  user_id: string;
+  email: string;
+  total_purchased: number;
+  total_used: number;
+  current_balance: number;
+}
+
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useAdminRole();
@@ -35,6 +43,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [inventory, setInventory] = useState<number | null>(null);
+  const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
@@ -72,11 +81,108 @@ const Admin = () => {
     setLoading(false);
   };
 
+  const fetchUserSummaries = async () => {
+    // Get all approved transactions grouped by user
+    const { data: txData } = await supabase
+      .from("payment_transactions")
+      .select("user_id, credits, status")
+      .eq("status", "approved");
+
+    // Get all user credits
+    const { data: creditData } = await supabase
+      .from("user_credits")
+      .select("user_id, balance");
+
+    // Get all scan history for usage
+    const { data: scanData } = await supabase
+      .from("scan_history")
+      .select("user_id, credits_used");
+
+    // Get profiles for emails
+    const allUserIds = new Set<string>();
+    txData?.forEach((t) => allUserIds.add(t.user_id));
+    creditData?.forEach((c) => allUserIds.add(c.user_id));
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", [...allUserIds]);
+
+    const emailMap = new Map(profiles?.map((p) => [p.id, p.email || "Unknown"]) || []);
+
+    // Aggregate purchased per user
+    const purchasedMap = new Map<string, number>();
+    txData?.forEach((t) => {
+      purchasedMap.set(t.user_id, (purchasedMap.get(t.user_id) || 0) + t.credits);
+    });
+
+    // Aggregate used per user
+    const usedMap = new Map<string, number>();
+    scanData?.forEach((s) => {
+      usedMap.set(s.user_id, (usedMap.get(s.user_id) || 0) + s.credits_used);
+    });
+
+    // Balance per user
+    const balanceMap = new Map<string, number>();
+    creditData?.forEach((c) => {
+      balanceMap.set(c.user_id, c.balance);
+    });
+
+    // Only show users who have purchased
+    const summaries: UserSummary[] = [];
+    purchasedMap.forEach((purchased, userId) => {
+      summaries.push({
+        user_id: userId,
+        email: emailMap.get(userId) || "Unknown",
+        total_purchased: purchased,
+        total_used: usedMap.get(userId) || 0,
+        current_balance: balanceMap.get(userId) || 0,
+      });
+    });
+
+    setUserSummaries(summaries);
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchTransactions();
       fetchInventory();
+      fetchUserSummaries();
     }
+  }, [isAdmin]);
+
+  // Real-time listener for api_inventory
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin_inventory")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "api_inventory" },
+        (payload) => {
+          const newData = payload.new as any;
+          setInventory(newData.remaining_credits);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
+
+  // Real-time listener for payment_transactions
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin_transactions")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payment_transactions" },
+        () => {
+          fetchTransactions();
+          fetchUserSummaries();
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
 
   const handleApprove = async (tx: Transaction) => {
@@ -105,7 +211,7 @@ const Admin = () => {
       return;
     }
 
-    // 2. Add credits to user (triggers realtime update to sidebar)
+    // 2. Add credits to user
     const { data: currentCredits } = await supabase
       .from("user_credits")
       .select("balance")
@@ -135,13 +241,14 @@ const Admin = () => {
       await supabase
         .from("api_inventory")
         .update({ remaining_credits: newInventory, updated_at: now.toISOString() })
-        .not("id", "is", null); // update the singleton row
+        .not("id", "is", null);
       setInventory(newInventory);
     }
 
     toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${expiresAt.toLocaleDateString()}.` });
     setApprovingId(null);
     fetchTransactions();
+    fetchUserSummaries();
   };
 
   if (authLoading || roleLoading) {
@@ -169,14 +276,50 @@ const Admin = () => {
             <Database className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Remaining API Inventory</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">API Credit Stock</p>
             <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
               {inventory !== null ? inventory.toLocaleString() : "—"}{" "}
-              <span className="text-sm font-medium text-muted-foreground">/ 15,000 credits</span>
+              <span className="text-sm font-medium text-muted-foreground">/ 10,325 credits</span>
             </p>
           </div>
         </div>
 
+        {/* User Tracking Table */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">User Credit Tracking</h2>
+          </div>
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            {userSummaries.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">No users with purchased credits yet.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User Email</TableHead>
+                    <TableHead className="text-right">Total Purchased</TableHead>
+                    <TableHead className="text-right">Total Used</TableHead>
+                    <TableHead className="text-right">Current Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {userSummaries.map((u) => (
+                    <TableRow key={u.user_id}>
+                      <TableCell className="text-sm font-medium text-foreground">{u.email}</TableCell>
+                      <TableCell className="text-sm font-bold text-right text-primary font-mono tabular-nums">{u.total_purchased}</TableCell>
+                      <TableCell className="text-sm font-bold text-right text-destructive font-mono tabular-nums">{u.total_used}</TableCell>
+                      <TableCell className="text-sm font-bold text-right text-foreground font-mono tabular-nums">{u.current_balance}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </div>
+
+        {/* Transactions Table */}
+        <h2 className="text-lg font-bold text-foreground mb-3">Payment Transactions</h2>
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           {loading ? (
             <div className="p-8 flex justify-center">
