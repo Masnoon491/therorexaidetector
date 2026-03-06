@@ -163,11 +163,40 @@ const Admin = () => {
     setUserSummaries(summaries);
   };
 
+  const fetchScanAudit = async () => {
+    const { data: scans } = await supabase
+      .from("scan_history")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (scans) {
+      const userIds = [...new Set(scans.map((s: any) => s.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      const emailMap = new Map(profiles?.map((p) => [p.id, p.email || "Unknown"]) || []);
+
+      setScanAudit(
+        scans.map((s: any) => ({
+          id: s.id,
+          user_email: emailMap.get(s.user_id) || "Unknown",
+          scan_date: s.created_at,
+          word_count: s.word_count,
+          credits_used: s.credits_used,
+          ai_score: s.ai_score,
+        }))
+      );
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchTransactions();
       fetchInventory();
       fetchUserSummaries();
+      fetchScanAudit();
     }
   }, [isAdmin]);
 
