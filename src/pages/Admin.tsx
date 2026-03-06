@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, Loader2, ShieldAlert } from "lucide-react";
+import { Check, Loader2, ShieldAlert, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Transaction {
@@ -34,11 +34,21 @@ const Admin = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
     if (!authLoading && !roleLoading && !isAdmin && user) navigate("/");
   }, [authLoading, roleLoading, isAdmin, user, navigate]);
+
+  const fetchInventory = async () => {
+    const { data } = await supabase
+      .from("api_inventory")
+      .select("remaining_credits")
+      .limit(1)
+      .maybeSingle();
+    if (data) setInventory(data.remaining_credits);
+  };
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -48,7 +58,6 @@ const Admin = () => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      // Fetch user emails from profiles
       const userIds = [...new Set(data.map((t) => t.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -64,15 +73,23 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) fetchTransactions();
+    if (isAdmin) {
+      fetchTransactions();
+      fetchInventory();
+    }
   }, [isAdmin]);
 
   const handleApprove = async (tx: Transaction) => {
+    if (inventory !== null && inventory < tx.credits) {
+      toast({ title: "Insufficient API Inventory", description: `Need ${tx.credits} credits but only ${inventory} remaining.`, variant: "destructive" });
+      return;
+    }
+
     setApprovingId(tx.id);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Update transaction status
+    // 1. Update transaction status
     const { error: txError } = await supabase
       .from("payment_transactions")
       .update({
@@ -88,7 +105,7 @@ const Admin = () => {
       return;
     }
 
-    // Update user credits: add credits and set expiry
+    // 2. Add credits to user (triggers realtime update to sidebar)
     const { data: currentCredits } = await supabase
       .from("user_credits")
       .select("balance")
@@ -97,7 +114,7 @@ const Admin = () => {
 
     const newBalance = (currentCredits?.balance || 0) + tx.credits;
 
-    await supabase
+    const { error: creditError } = await supabase
       .from("user_credits")
       .update({
         balance: newBalance,
@@ -106,7 +123,23 @@ const Admin = () => {
       })
       .eq("user_id", tx.user_id);
 
-    toast({ title: "Approved", description: `${tx.credits} credits added to user. Expires ${expiresAt.toLocaleDateString()}.` });
+    if (creditError) {
+      toast({ title: "Credit update failed", description: creditError.message, variant: "destructive" });
+      setApprovingId(null);
+      return;
+    }
+
+    // 3. Deduct from API inventory
+    if (inventory !== null) {
+      const newInventory = inventory - tx.credits;
+      await supabase
+        .from("api_inventory")
+        .update({ remaining_credits: newInventory, updated_at: now.toISOString() })
+        .not("id", "is", null); // update the singleton row
+      setInventory(newInventory);
+    }
+
+    toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${expiresAt.toLocaleDateString()}.` });
     setApprovingId(null);
     fetchTransactions();
   };
@@ -128,6 +161,20 @@ const Admin = () => {
         <div className="flex items-center gap-3 mb-6">
           <ShieldAlert className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-extrabold text-foreground">Admin — Payment Verification</h1>
+        </div>
+
+        {/* API Inventory Card */}
+        <div className="mb-6 rounded-lg border border-border bg-card p-5 flex items-center gap-4">
+          <div className="p-3 rounded-full bg-primary/10">
+            <Database className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Remaining API Inventory</p>
+            <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
+              {inventory !== null ? inventory.toLocaleString() : "—"}{" "}
+              <span className="text-sm font-medium text-muted-foreground">/ 15,000 credits</span>
+            </p>
+          </div>
         </div>
 
         <div className="bg-card rounded-lg border border-border overflow-hidden">
