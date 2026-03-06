@@ -38,6 +38,15 @@ interface UserSummary {
   expiry_date: string | null;
 }
 
+interface ScanAuditEntry {
+  id: string;
+  user_email: string;
+  scan_date: string;
+  word_count: number;
+  credits_used: number;
+  ai_score: number | null;
+}
+
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useAdminRole();
