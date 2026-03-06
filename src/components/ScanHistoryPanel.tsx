@@ -1,4 +1,6 @@
-import { History, FileText } from "lucide-react";
+import { useState } from "react";
+import { History, FileText, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { formatDateBD } from "@/utils/dateFormat";
 
@@ -14,6 +16,11 @@ function getRiskLabel(score: number | null) {
 
 const ScanHistoryPanel = () => {
   const { history, loading } = useScanHistory();
+  const [search, setSearch] = useState("");
+
+  const filtered = search.trim()
+    ? history.filter((e) => e.title.toLowerCase().includes(search.trim().toLowerCase()))
+    : history;
 
   return (
     <div className="space-y-6">
@@ -27,18 +34,31 @@ const ScanHistoryPanel = () => {
         </p>
       </div>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by document name…"
+          className="pl-9 h-9 text-sm"
+        />
+      </div>
+
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-14 rounded-md animate-shimmer" />
           ))}
         </div>
-      ) : history.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="bg-card border border-border rounded-lg p-12 text-center">
           <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-muted-foreground">No scans yet</p>
+          <p className="text-sm font-semibold text-muted-foreground">
+            {search.trim() ? "No matching documents" : "No scans yet"}
+          </p>
           <p className="text-xs text-muted-foreground/70 mt-1">
-            Run your first AI audit to see results here.
+            {search.trim() ? "Try a different search term." : "Run your first AI audit to see results here."}
           </p>
         </div>
       ) : (
@@ -47,7 +67,7 @@ const ScanHistoryPanel = () => {
             <thead>
               <tr className="bg-secondary">
                 <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Title</th>
+                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Document</th>
                 <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Words</th>
                 <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">AI Score</th>
                 <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Risk</th>
@@ -55,7 +75,7 @@ const ScanHistoryPanel = () => {
               </tr>
             </thead>
             <tbody>
-              {history.map((entry, i) => {
+              {filtered.map((entry, i) => {
                 const risk = getRiskLabel(entry.ai_score);
                 const rowBg = i % 2 === 0 ? "bg-card" : "bg-secondary/50";
                 return (

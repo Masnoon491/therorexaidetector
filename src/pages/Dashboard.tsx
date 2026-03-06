@@ -25,7 +25,8 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<"editor" | "history" | "payments" | "settings">("editor");
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
   const [currentWordCount, setCurrentWordCount] = useState(0);
-  const [lastScanMeta, setLastScanMeta] = useState<{ wordCount: number; creditsUsed: number; ipAddress: string | null }>({ wordCount: 0, creditsUsed: 0, ipAddress: null });
+  const [currentDocName, setCurrentDocName] = useState("");
+  const [lastScanMeta, setLastScanMeta] = useState<{ wordCount: number; creditsUsed: number; ipAddress: string | null; documentName: string }>({ wordCount: 0, creditsUsed: 0, ipAddress: null, documentName: "" });
   const editorRef = useRef<ContentEditorRef>(null);
   const { toast } = useToast();
   const { user, loading } = useAuth();
@@ -85,8 +86,9 @@ const Dashboard = () => {
         await supabase.from("profiles").update({ last_ip: ipAddress } as any).eq("id", user!.id);
       } catch { /* IP capture is best-effort */ }
 
-      setLastScanMeta({ wordCount, creditsUsed: creditsNeeded, ipAddress });
-      await logScan({ title: `Scan - ${new Date().toLocaleString()}`, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded, ip_address: ipAddress } as any);
+      const docName = editorRef.current?.getDocumentName() || "Untitled Document";
+      setLastScanMeta({ wordCount, creditsUsed: creditsNeeded, ipAddress, documentName: docName });
+      await logScan({ title: docName, document_name: docName, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded, ip_address: ipAddress } as any);
       toast({ title: "Scan saved to history", description: `${wordCount} words scanned using ${creditsNeeded} credits.` });
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });
@@ -98,7 +100,7 @@ const Dashboard = () => {
   if (loading) return null;
   if (!user) return null;
 
-  const scanDisabled = currentWordCount < 100 || isScanning || isExpired;
+  const scanDisabled = currentWordCount < 100 || isScanning || isExpired || !currentDocName.trim();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -119,7 +121,7 @@ const Dashboard = () => {
                 <div className="flex-1 flex">
                   <div className="flex-1 flex flex-col min-w-0 border-r border-border">
                     <div className="flex-1">
-                      <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} />
+                      <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} onDocNameChange={setCurrentDocName} />
                     </div>
                   </div>
                   <div className="w-72 shrink-0 bg-card border-l border-border hidden lg:flex flex-col">
@@ -151,7 +153,7 @@ const Dashboard = () => {
               {activeView === "editor" && results && (
                 <div className="border-t border-border">
                   <div className="max-w-4xl mx-auto w-full px-6 py-8">
-                    <ResultsPanel results={results} wordCount={lastScanMeta.wordCount} creditsUsed={lastScanMeta.creditsUsed} ipAddress={lastScanMeta.ipAddress} />
+                    <ResultsPanel results={results} wordCount={lastScanMeta.wordCount} creditsUsed={lastScanMeta.creditsUsed} ipAddress={lastScanMeta.ipAddress} documentName={lastScanMeta.documentName} />
                   </div>
                 </div>
               )}
