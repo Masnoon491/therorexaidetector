@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, Loader2, ShieldAlert, Database, Users } from "lucide-react";
+import { Check, X, Loader2, ShieldAlert, Database, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Transaction {
@@ -32,6 +32,9 @@ interface UserSummary {
   total_purchased: number;
   total_used: number;
   current_balance: number;
+  last_ip: string | null;
+  activation_date: string | null;
+  expiry_date: string | null;
 }
 
 const Admin = () => {
@@ -42,6 +45,7 @@ const Admin = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [inventory, setInventory] = useState<number | null>(null);
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
 
@@ -82,53 +86,55 @@ const Admin = () => {
   };
 
   const fetchUserSummaries = async () => {
-    // Get all approved transactions grouped by user
     const { data: txData } = await supabase
       .from("payment_transactions")
-      .select("user_id, credits, status")
+      .select("user_id, credits, status, approved_at, expires_at")
       .eq("status", "approved");
 
-    // Get all user credits
     const { data: creditData } = await supabase
       .from("user_credits")
       .select("user_id, balance");
 
-    // Get all scan history for usage
     const { data: scanData } = await supabase
       .from("scan_history")
       .select("user_id, credits_used");
 
-    // Get profiles for emails
     const allUserIds = new Set<string>();
     txData?.forEach((t) => allUserIds.add(t.user_id));
     creditData?.forEach((c) => allUserIds.add(c.user_id));
 
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, email")
+      .select("id, email, last_ip")
       .in("id", [...allUserIds]);
 
     const emailMap = new Map(profiles?.map((p) => [p.id, p.email || "Unknown"]) || []);
+    const ipMap = new Map(profiles?.map((p) => [p.id, (p as any).last_ip || null]) || []);
 
-    // Aggregate purchased per user
     const purchasedMap = new Map<string, number>();
+    const activationMap = new Map<string, string>();
+    const expiryMap = new Map<string, string>();
     txData?.forEach((t) => {
       purchasedMap.set(t.user_id, (purchasedMap.get(t.user_id) || 0) + t.credits);
+      // Use earliest approval as activation, latest expiry
+      if (t.approved_at && (!activationMap.has(t.user_id) || t.approved_at < activationMap.get(t.user_id)!)) {
+        activationMap.set(t.user_id, t.approved_at);
+      }
+      if (t.expires_at && (!expiryMap.has(t.user_id) || t.expires_at > expiryMap.get(t.user_id)!)) {
+        expiryMap.set(t.user_id, t.expires_at);
+      }
     });
 
-    // Aggregate used per user
     const usedMap = new Map<string, number>();
     scanData?.forEach((s) => {
       usedMap.set(s.user_id, (usedMap.get(s.user_id) || 0) + s.credits_used);
     });
 
-    // Balance per user
     const balanceMap = new Map<string, number>();
     creditData?.forEach((c) => {
       balanceMap.set(c.user_id, c.balance);
     });
 
-    // Only show users who have purchased
     const summaries: UserSummary[] = [];
     purchasedMap.forEach((purchased, userId) => {
       summaries.push({
@@ -137,6 +143,9 @@ const Admin = () => {
         total_purchased: purchased,
         total_used: usedMap.get(userId) || 0,
         current_balance: balanceMap.get(userId) || 0,
+        last_ip: ipMap.get(userId) || null,
+        activation_date: activationMap.get(userId) || null,
+        expiry_date: expiryMap.get(userId) || null,
       });
     });
 
@@ -156,14 +165,9 @@ const Admin = () => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("admin_inventory")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "api_inventory" },
-        (payload) => {
-          const newData = payload.new as any;
-          setInventory(newData.remaining_credits);
-        }
-      )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "api_inventory" }, (payload) => {
+        setInventory((payload.new as any).remaining_credits);
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
@@ -173,14 +177,10 @@ const Admin = () => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("admin_transactions")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "payment_transactions" },
-        () => {
-          fetchTransactions();
-          fetchUserSummaries();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "payment_transactions" }, () => {
+        fetchTransactions();
+        fetchUserSummaries();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
@@ -195,14 +195,9 @@ const Admin = () => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // 1. Update transaction status
     const { error: txError } = await supabase
       .from("payment_transactions")
-      .update({
-        status: "approved",
-        approved_at: now.toISOString(),
-        expires_at: expiresAt.toISOString(),
-      })
+      .update({ status: "approved", approved_at: now.toISOString(), expires_at: expiresAt.toISOString() })
       .eq("id", tx.id);
 
     if (txError) {
@@ -211,7 +206,6 @@ const Admin = () => {
       return;
     }
 
-    // 2. Add credits to user
     const { data: currentCredits } = await supabase
       .from("user_credits")
       .select("balance")
@@ -222,11 +216,7 @@ const Admin = () => {
 
     const { error: creditError } = await supabase
       .from("user_credits")
-      .update({
-        balance: newBalance,
-        expires_at: expiresAt.toISOString(),
-        updated_at: now.toISOString(),
-      })
+      .update({ balance: newBalance, expires_at: expiresAt.toISOString(), updated_at: now.toISOString() })
       .eq("user_id", tx.user_id);
 
     if (creditError) {
@@ -235,7 +225,6 @@ const Admin = () => {
       return;
     }
 
-    // 3. Deduct from API inventory
     if (inventory !== null) {
       const newInventory = inventory - tx.credits;
       await supabase
@@ -249,6 +238,22 @@ const Admin = () => {
     setApprovingId(null);
     fetchTransactions();
     fetchUserSummaries();
+  };
+
+  const handleReject = async (tx: Transaction) => {
+    setRejectingId(tx.id);
+    const { error } = await supabase
+      .from("payment_transactions")
+      .update({ status: "rejected" })
+      .eq("id", tx.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Rejected", description: `Transaction ${tx.trx_id} has been rejected.` });
+    }
+    setRejectingId(null);
+    fetchTransactions();
   };
 
   if (authLoading || roleLoading) {
@@ -267,7 +272,7 @@ const Admin = () => {
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
         <div className="flex items-center gap-3 mb-6">
           <ShieldAlert className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-extrabold text-foreground">Admin — Payment Verification</h1>
+          <h1 className="text-2xl font-extrabold text-foreground">Theorex Admin — Payment Verification</h1>
         </div>
 
         {/* API Inventory Card */}
@@ -279,7 +284,7 @@ const Admin = () => {
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">API Credit Stock</p>
             <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
               {inventory !== null ? inventory.toLocaleString() : "—"}{" "}
-              <span className="text-sm font-medium text-muted-foreground">/ 10,325 credits</span>
+              <span className="text-sm font-medium text-muted-foreground">/ 10,269 credits</span>
             </p>
           </div>
         </div>
@@ -290,7 +295,7 @@ const Admin = () => {
             <Users className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-bold text-foreground">User Credit Tracking</h2>
           </div>
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
             {userSummaries.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-sm">No users with purchased credits yet.</div>
             ) : (
@@ -298,18 +303,28 @@ const Admin = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User Email</TableHead>
+                    <TableHead>IP Address</TableHead>
                     <TableHead className="text-right">Total Purchased</TableHead>
                     <TableHead className="text-right">Total Used</TableHead>
                     <TableHead className="text-right">Current Balance</TableHead>
+                    <TableHead>Activation Date</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {userSummaries.map((u) => (
                     <TableRow key={u.user_id}>
                       <TableCell className="text-sm font-medium text-foreground">{u.email}</TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{u.last_ip || "—"}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-primary font-mono tabular-nums">{u.total_purchased}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-destructive font-mono tabular-nums">{u.total_used}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-foreground font-mono tabular-nums">{u.current_balance}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {u.activation_date ? new Date(u.activation_date).toLocaleDateString() : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {u.expiry_date ? new Date(u.expiry_date).toLocaleDateString() : "—"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -320,15 +335,13 @@ const Admin = () => {
 
         {/* Transactions Table */}
         <h2 className="text-lg font-bold text-foreground mb-3">Payment Transactions</h2>
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="bg-card rounded-lg border border-border overflow-x-auto">
           {loading ? (
             <div className="p-8 flex justify-center">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              No payment transactions yet.
-            </div>
+            <div className="p-8 text-center text-muted-foreground text-sm">No payment transactions yet.</div>
           ) : (
             <Table>
               <TableHeader>
@@ -352,39 +365,53 @@ const Admin = () => {
                     <TableCell className="text-sm font-medium text-foreground max-w-[200px] truncate">
                       {tx.user_email}
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-foreground">
-                      {tx.trx_id}
-                    </TableCell>
+                    <TableCell className="font-mono text-sm text-foreground">{tx.trx_id}</TableCell>
                     <TableCell className="text-sm">{tx.plan_name}</TableCell>
                     <TableCell className="text-sm font-semibold">{tx.amount_bdt} TK</TableCell>
                     <TableCell className="text-sm font-bold text-primary">{tx.credits}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={tx.status === "approved" ? "default" : "secondary"}
-                        className={tx.status === "approved" ? "bg-primary text-primary-foreground" : "bg-warning/10 text-warning"}
+                        variant={tx.status === "approved" ? "default" : tx.status === "rejected" ? "destructive" : "secondary"}
+                        className={
+                          tx.status === "approved"
+                            ? "bg-primary text-primary-foreground"
+                            : tx.status === "rejected"
+                            ? ""
+                            : "bg-warning/10 text-warning"
+                        }
                       >
-                        {tx.status === "approved" ? "Approved" : "Pending"}
+                        {tx.status === "approved" ? "Approved" : tx.status === "rejected" ? "Rejected" : "Pending"}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {tx.status === "pending" ? (
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(tx)}
-                          disabled={approvingId === tx.id}
-                          className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                          {approvingId === tx.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Check className="w-3.5 h-3.5" />
-                          )}
-                          Approve
-                        </Button>
-                      ) : (
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(tx)}
+                            disabled={approvingId === tx.id}
+                            className="gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                          >
+                            {approvingId === tx.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleReject(tx)}
+                            disabled={rejectingId === tx.id}
+                            className="gap-1"
+                          >
+                            {rejectingId === tx.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                            Reject
+                          </Button>
+                        </div>
+                      ) : tx.status === "approved" ? (
                         <span className="text-xs text-muted-foreground">
                           Expires {tx.expires_at ? new Date(tx.expires_at).toLocaleDateString() : "—"}
                         </span>
+                      ) : (
+                        <span className="text-xs text-destructive font-medium">Rejected</span>
                       )}
                     </TableCell>
                   </TableRow>

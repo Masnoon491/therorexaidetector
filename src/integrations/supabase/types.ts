@@ -81,6 +81,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          last_ip: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -88,6 +89,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          last_ip?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          last_ip?: string | null
         }
         Relationships: []
       }
@@ -104,6 +107,7 @@ export type Database = {
           created_at: string
           credits_used: number
           id: string
+          ip_address: string | null
           plagiarism_score: number | null
           title: string
           user_id: string
@@ -114,6 +118,7 @@ export type Database = {
           created_at?: string
           credits_used?: number
           id?: string
+          ip_address?: string | null
           plagiarism_score?: number | null
           title?: string
           user_id: string
@@ -124,6 +129,7 @@ export type Database = {
           created_at?: string
           credits_used?: number
           id?: string
+          ip_address?: string | null
           plagiarism_score?: number | null
           title?: string
           user_id?: string

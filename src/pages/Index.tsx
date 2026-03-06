@@ -112,7 +112,17 @@ const Index = () => {
       setResults(normalized);
 
       if (user) {
-        await logScan({ title: `Scan - ${new Date().toLocaleString()}`, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded });
+        // Capture IP for tracking
+        let ipAddress: string | null = null;
+        try {
+          const ipRes = await fetch("https://api.ipify.org?format=json");
+          const ipData = await ipRes.json();
+          ipAddress = ipData.ip;
+          // Update profile with latest IP
+          await supabase.from("profiles").update({ last_ip: ipAddress } as any).eq("id", user.id);
+        } catch { /* IP capture is best-effort */ }
+
+        await logScan({ title: `Scan - ${new Date().toLocaleString()}`, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded, ip_address: ipAddress } as any);
       }
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });

@@ -83,10 +83,16 @@ export function PaymentHistory() {
                 <TableCell className="text-sm font-bold text-primary">{tx.credits}</TableCell>
                 <TableCell>
                   <Badge
-                    variant={tx.status === "approved" ? "default" : "secondary"}
-                    className={tx.status === "approved" ? "bg-primary text-primary-foreground" : "bg-warning/10 text-warning"}
+                    variant={tx.status === "approved" ? "default" : tx.status === "rejected" ? "destructive" : "secondary"}
+                    className={
+                      tx.status === "approved"
+                        ? "bg-primary text-primary-foreground"
+                        : tx.status === "rejected"
+                        ? ""
+                        : "bg-warning/10 text-warning"
+                    }
                   >
-                    {tx.status === "approved" ? "Approved" : "Pending"}
+                    {tx.status === "approved" ? "Approved" : tx.status === "rejected" ? "Rejected" : "Pending"}
                   </Badge>
                 </TableCell>
               </TableRow>
