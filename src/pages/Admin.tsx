@@ -58,6 +58,7 @@ const Admin = () => {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [inventory, setInventory] = useState<number | null>(null);
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
+  const [scanAudit, setScanAudit] = useState<ScanAuditEntry[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
