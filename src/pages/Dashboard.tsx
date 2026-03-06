@@ -132,6 +132,7 @@ const Dashboard = () => {
                       isScanning={isScanning}
                       wordCount={currentWordCount}
                       disabled={isExpired}
+                      hasDocName={!!currentDocName.trim()}
                     />
                   </div>
                 </div>
