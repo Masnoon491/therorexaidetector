@@ -225,6 +225,19 @@ const Admin = () => {
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
 
+  // Real-time listener for scan_history
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin_scans")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "scan_history" }, () => {
+        fetchScanAudit();
+        fetchUserSummaries();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
+
   const handleApprove = async (tx: Transaction) => {
     if (inventory !== null && inventory < tx.credits) {
       toast({ title: "Insufficient API Inventory", description: `Need ${tx.credits} credits but only ${inventory} remaining.`, variant: "destructive" });
