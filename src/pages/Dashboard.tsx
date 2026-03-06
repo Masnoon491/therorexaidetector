@@ -21,7 +21,7 @@ import { normalizeResponse } from "@/utils/normalizeResponse";
 const Dashboard = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResults | null>(null);
-  const [activeView, setActiveView] = useState<"editor" | "history" | "payments">("editor");
+  const [activeView, setActiveView] = useState<"editor" | "history" | "payments" | "settings">("editor");
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
   const [currentWordCount, setCurrentWordCount] = useState(0);
   const editorRef = useRef<ContentEditorRef>(null);
