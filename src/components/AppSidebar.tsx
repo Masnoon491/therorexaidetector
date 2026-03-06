@@ -145,7 +145,6 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                       <div className="flex items-center justify-center gap-1 mt-1">
                         <Clock className={`w-3 h-3 ${daysRemaining < 3 ? "text-[hsl(45,100%,51%)]" : "text-primary"}`} />
                         <span
-                        <span
                           className={`text-[11px] font-semibold ${
                             daysRemaining < 3 ? "text-[hsl(45,100%,51%)]" : "text-primary"
                           }`}
