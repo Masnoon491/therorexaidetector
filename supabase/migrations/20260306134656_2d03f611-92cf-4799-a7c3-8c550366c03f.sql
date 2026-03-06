@@ -1,0 +1,61 @@
+
+-- Fix ALL restrictive policies across all tables to be PERMISSIVE
+
+-- ========== scan_history ==========
+DROP POLICY IF EXISTS "Users can read own scan history" ON public.scan_history;
+DROP POLICY IF EXISTS "Admins can read all scan history" ON public.scan_history;
+DROP POLICY IF EXISTS "Users can insert own scan history" ON public.scan_history;
+
+CREATE POLICY "Users can read own scan history" ON public.scan_history AS PERMISSIVE FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Admins can read all scan history" ON public.scan_history AS PERMISSIVE FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Users can insert own scan history" ON public.scan_history AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+-- ========== profiles ==========
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can read all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+
+CREATE POLICY "Users can read own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated USING (auth.uid() = id);
+CREATE POLICY "Admins can read all profiles" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Users can insert own profile" ON public.profiles AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO authenticated USING (auth.uid() = id);
+
+-- ========== payment_transactions ==========
+DROP POLICY IF EXISTS "Users can read own transactions" ON public.payment_transactions;
+DROP POLICY IF EXISTS "Admins can update transactions" ON public.payment_transactions;
+DROP POLICY IF EXISTS "Users can insert own transactions" ON public.payment_transactions;
+
+CREATE POLICY "Users can read own transactions" ON public.payment_transactions AS PERMISSIVE FOR SELECT TO authenticated USING (auth.uid() = user_id OR has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update transactions" ON public.payment_transactions AS PERMISSIVE FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Users can insert own transactions" ON public.payment_transactions AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+-- ========== user_credits ==========
+DROP POLICY IF EXISTS "Users can read own credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Admins can read user credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Users can update own credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Admins can update user credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Users can insert own credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Admins can insert user credits" ON public.user_credits;
+
+CREATE POLICY "Users can read own credits" ON public.user_credits AS PERMISSIVE FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Admins can read user credits" ON public.user_credits AS PERMISSIVE FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Users can update own credits" ON public.user_credits AS PERMISSIVE FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Admins can update user credits" ON public.user_credits AS PERMISSIVE FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Users can insert own credits" ON public.user_credits AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admins can insert user credits" ON public.user_credits AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+
+-- ========== user_roles ==========
+DROP POLICY IF EXISTS "Admins can read user_roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Users can read own role" ON public.user_roles;
+DROP POLICY IF EXISTS "Admins can read all roles" ON public.user_roles;
+
+CREATE POLICY "Users can read own role" ON public.user_roles AS PERMISSIVE FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Admins can read all roles" ON public.user_roles AS PERMISSIVE FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+
+-- ========== api_inventory ==========
+DROP POLICY IF EXISTS "Admins can read inventory" ON public.api_inventory;
+DROP POLICY IF EXISTS "Admins can update inventory" ON public.api_inventory;
+
+CREATE POLICY "Admins can read inventory" ON public.api_inventory AS PERMISSIVE FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update inventory" ON public.api_inventory AS PERMISSIVE FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
