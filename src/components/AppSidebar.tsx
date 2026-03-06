@@ -2,6 +2,7 @@ import { FileText, History, Coins, CreditCard, Plus, Clock, Receipt, ShieldAlert
 import { useCredits } from "@/hooks/useCredits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { usePendingCount } from "@/hooks/usePendingCount";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
   const { balance, daysRemaining } = useCredits();
   const { user } = useAuth();
   const { isAdmin } = useAdminRole();
+  const pendingCount = usePendingCount();
   const navigate = useNavigate();
 
   const navItems = [
@@ -88,7 +90,21 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                     className="mx-2 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                   >
                     <ShieldAlert className="w-4 h-4 shrink-0" />
-                    {!collapsed && <span className="text-sm font-semibold">Admin Panel</span>}
+                    {!collapsed && (
+                      <span className="text-sm font-semibold flex items-center gap-2">
+                        Admin Panel
+                        {pendingCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground">
+                            {pendingCount}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {collapsed && pendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-full bg-destructive text-destructive-foreground">
+                        {pendingCount}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
