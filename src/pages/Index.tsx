@@ -59,7 +59,7 @@ function normalizeResponse(data: any): ScanResults {
 const Index = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResults | null>(null);
-  const [activeView, setActiveView] = useState<"editor" | "history">("editor");
+  const [activeView, setActiveView] = useState<"editor" | "history" | "payments">("editor");
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
   const [currentWordCount, setCurrentWordCount] = useState(0);
   const editorRef = useRef<ContentEditorRef>(null);
