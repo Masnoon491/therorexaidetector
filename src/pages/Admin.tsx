@@ -10,6 +10,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Check, X, Loader2, ShieldAlert, Database, Users } from "lucide-react";
+import { formatDateBD } from "@/utils/dateFormat";
 import { useToast } from "@/hooks/use-toast";
 
 interface Transaction {
@@ -234,7 +235,7 @@ const Admin = () => {
       setInventory(newInventory);
     }
 
-    toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${expiresAt.toLocaleDateString()}.` });
+    toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${formatDateBD(expiresAt)}.` });
     setApprovingId(null);
     fetchTransactions();
     fetchUserSummaries();
@@ -320,10 +321,10 @@ const Admin = () => {
                       <TableCell className="text-sm font-bold text-right text-destructive font-mono tabular-nums">{u.total_used}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-foreground font-mono tabular-nums">{u.current_balance}</TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {u.activation_date ? new Date(u.activation_date).toLocaleDateString() : "—"}
+                        {u.activation_date ? formatDateBD(u.activation_date) : "—"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {u.expiry_date ? new Date(u.expiry_date).toLocaleDateString() : "—"}
+                        {u.expiry_date ? formatDateBD(u.expiry_date) : "—"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -360,7 +361,7 @@ const Admin = () => {
                 {transactions.map((tx) => (
                   <TableRow key={tx.id}>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(tx.created_at).toLocaleDateString()}
+                      {formatDateBD(tx.created_at)}
                     </TableCell>
                     <TableCell className="text-sm font-medium text-foreground max-w-[200px] truncate">
                       {tx.user_email}
@@ -408,7 +409,7 @@ const Admin = () => {
                         </div>
                       ) : tx.status === "approved" ? (
                         <span className="text-xs text-muted-foreground">
-                          Expires {tx.expires_at ? new Date(tx.expires_at).toLocaleDateString() : "—"}
+                          Expires {tx.expires_at ? formatDateBD(tx.expires_at) : "—"}
                         </span>
                       ) : (
                         <span className="text-xs text-destructive font-medium">Rejected</span>

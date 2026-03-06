@@ -6,6 +6,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Loader2, Receipt } from "lucide-react";
+import { formatDateBD } from "@/utils/dateFormat";
 
 interface Transaction {
   id: string;
@@ -75,7 +76,7 @@ export function PaymentHistory() {
             {transactions.map((tx) => (
               <TableRow key={tx.id}>
                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(tx.created_at).toLocaleDateString()}
+                  {formatDateBD(tx.created_at)}
                 </TableCell>
                 <TableCell className="font-mono text-sm text-foreground">{tx.trx_id}</TableCell>
                 <TableCell className="text-sm">{tx.plan_name}</TableCell>
