@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, X, Loader2, ShieldAlert, Database, Users } from "lucide-react";
+import { Check, X, Loader2, ShieldAlert, Database, Users, ScanSearch } from "lucide-react";
 import { formatDateBD } from "@/utils/dateFormat";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,6 +38,15 @@ interface UserSummary {
   expiry_date: string | null;
 }
 
+interface ScanAuditEntry {
+  id: string;
+  user_email: string;
+  scan_date: string;
+  word_count: number;
+  credits_used: number;
+  ai_score: number | null;
+}
+
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useAdminRole();
@@ -49,6 +58,7 @@ const Admin = () => {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [inventory, setInventory] = useState<number | null>(null);
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
+  const [scanAudit, setScanAudit] = useState<ScanAuditEntry[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
@@ -153,11 +163,40 @@ const Admin = () => {
     setUserSummaries(summaries);
   };
 
+  const fetchScanAudit = async () => {
+    const { data: scans } = await supabase
+      .from("scan_history")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (scans) {
+      const userIds = [...new Set(scans.map((s: any) => s.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      const emailMap = new Map(profiles?.map((p) => [p.id, p.email || "Unknown"]) || []);
+
+      setScanAudit(
+        scans.map((s: any) => ({
+          id: s.id,
+          user_email: emailMap.get(s.user_id) || "Unknown",
+          scan_date: s.created_at,
+          word_count: s.word_count,
+          credits_used: s.credits_used,
+          ai_score: s.ai_score,
+        }))
+      );
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchTransactions();
       fetchInventory();
       fetchUserSummaries();
+      fetchScanAudit();
     }
   }, [isAdmin]);
 
@@ -180,6 +219,19 @@ const Admin = () => {
       .channel("admin_transactions")
       .on("postgres_changes", { event: "*", schema: "public", table: "payment_transactions" }, () => {
         fetchTransactions();
+        fetchUserSummaries();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
+
+  // Real-time listener for scan_history
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin_scans")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "scan_history" }, () => {
+        fetchScanAudit();
         fetchUserSummaries();
       })
       .subscribe();
@@ -338,6 +390,44 @@ const Admin = () => {
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         {u.expiry_date ? formatDateBD(u.expiry_date) : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </div>
+
+        {/* Global Scan Audit */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <ScanSearch className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">Global Scan Audit</h2>
+          </div>
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
+            {scanAudit.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">No scans recorded yet.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User Email</TableHead>
+                    <TableHead>Scan Date</TableHead>
+                    <TableHead className="text-right">Words Scanned</TableHead>
+                    <TableHead className="text-right">Credits Deducted</TableHead>
+                    <TableHead className="text-right">AI Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scanAudit.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-sm font-medium text-foreground">{s.user_email}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{formatDateBD(s.scan_date)}</TableCell>
+                      <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">{s.word_count.toLocaleString()}</TableCell>
+                      <TableCell className="text-sm font-bold font-mono tabular-nums text-right text-destructive">{s.credits_used}</TableCell>
+                      <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">
+                        {s.ai_score !== null ? `${Math.round(s.ai_score * 100)}%` : "—"}
                       </TableCell>
                     </TableRow>
                   ))}

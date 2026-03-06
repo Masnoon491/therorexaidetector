@@ -87,6 +87,7 @@ const Dashboard = () => {
 
       setLastScanMeta({ wordCount, creditsUsed: creditsNeeded, ipAddress });
       await logScan({ title: `Scan - ${new Date().toLocaleString()}`, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded, ip_address: ipAddress } as any);
+      toast({ title: "Scan saved to history", description: `${wordCount} words scanned using ${creditsNeeded} credits.` });
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });
     } finally {
