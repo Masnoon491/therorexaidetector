@@ -31,6 +31,20 @@ export function useScanHistory() {
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
+  // Realtime: auto-refresh when new scans are inserted for this user
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`scan_history_${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "scan_history", filter: `user_id=eq.${user.id}` },
+        () => { fetchHistory(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchHistory]);
+
   const logScan = async (entry: {
     title: string;
     word_count: number;
@@ -43,7 +57,7 @@ export function useScanHistory() {
       user_id: user.id,
       ...entry,
     });
-    fetchHistory();
+    // Realtime will trigger fetchHistory automatically
   };
 
   return { history, loading, logScan, refetch: fetchHistory };
