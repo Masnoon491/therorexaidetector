@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Check, Mail, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
+import { PaymentSubmitDialog } from "@/components/PaymentSubmitDialog";
 
 interface Plan {
   name: string;
