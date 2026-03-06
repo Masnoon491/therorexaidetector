@@ -8,6 +8,7 @@ interface ReportMeta {
   ipAddress: string | null;
   wordCount: number;
   creditsUsed: number;
+  documentName?: string;
 }
 
 function getRiskLabel(pct: number) {
@@ -83,6 +84,7 @@ export function generatePdfReport(results: ScanResults, meta: ReportMeta) {
   const lineH = 9;
 
   const details: [string, string][] = [
+    ["Document:", meta.documentName || "Untitled Document"],
     ["Audit ID:", meta.auditId],
     ["Scan Date:", formatDateBD(meta.scanDate)],
     ["Auditor:", "Theorex AI Detector"],

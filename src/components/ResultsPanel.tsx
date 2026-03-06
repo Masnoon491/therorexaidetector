@@ -231,9 +231,10 @@ interface ResultsPanelProps {
   wordCount?: number;
   creditsUsed?: number;
   ipAddress?: string | null;
+  documentName?: string;
 }
 
-const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = null }: ResultsPanelProps) => {
+const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = null, documentName }: ResultsPanelProps) => {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   if (!results) return null;
@@ -248,6 +249,7 @@ const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = nul
         ipAddress,
         wordCount,
         creditsUsed,
+        documentName: documentName || "Untitled Document",
       });
     } finally {
       setTimeout(() => setIsGeneratingPdf(false), 500);
