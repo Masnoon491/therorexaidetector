@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_inventory: {
+        Row: {
+          id: string
+          remaining_credits: number
+          total_credits: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          remaining_credits?: number
+          total_credits?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          remaining_credits?: number
+          total_credits?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_transactions: {
         Row: {
           amount_bdt: string
