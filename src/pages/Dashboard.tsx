@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChangePassword } from "@/components/ChangePassword";
 import TopNav from "@/components/TopNav";
 import { PaymentHistory } from "@/components/PaymentHistory";
 import Footer from "@/components/Footer";
@@ -124,11 +125,16 @@ const Dashboard = () => {
                 <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
                   <ScanHistoryPanel />
                 </main>
-              ) : (
+              ) : activeView === "payments" ? (
                 <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
                   <PaymentHistory />
                 </main>
-              )}
+              ) : activeView === "settings" ? (
+                <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
+                  <h1 className="text-xl font-extrabold text-foreground tracking-tight mb-6">Account Settings</h1>
+                  <ChangePassword />
+                </main>
+              ) : null}
 
               {activeView === "editor" && results && (
                 <div className="border-t border-border">
