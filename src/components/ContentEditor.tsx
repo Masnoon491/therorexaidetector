@@ -1,17 +1,20 @@
 import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Trash2, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Upload, Trash2, Loader2, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { calculateCredits } from "@/hooks/useCredits";
 import mammoth from "mammoth";
 
 interface ContentEditorProps {
   onTextChange?: (text: string) => void;
+  onDocNameChange?: (name: string) => void;
   maxWords?: number;
 }
 
 export interface ContentEditorRef {
   getText: () => string;
+  getDocumentName: () => string;
   clear: () => void;
 }
 
@@ -47,7 +50,6 @@ async function extractTextFromFile(file: File): Promise<string> {
   if (name.endsWith(".pdf")) {
     return extractTextFromPdf(file);
   }
-  // .txt and fallback
   return file.text();
 }
 
@@ -57,8 +59,13 @@ function truncateToWordLimit(text: string, limit: number): { text: string; trunc
   return { text: words.slice(0, limit).join(" "), truncated: true };
 }
 
-const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onTextChange, maxWords = 10000 }, ref) => {
+function stripExtension(filename: string): string {
+  return filename.replace(/\.[^/.]+$/, "");
+}
+
+const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onTextChange, onDocNameChange, maxWords = 10000 }, ref) => {
   const [text, setText] = useState("");
+  const [documentName, setDocumentName] = useState("");
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -68,11 +75,16 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
 
   useImperativeHandle(ref, () => ({
     getText: () => text,
-    clear: () => { setText(""); onTextChange?.(""); },
+    getDocumentName: () => documentName,
+    clear: () => { setText(""); setDocumentName(""); onTextChange?.(""); onDocNameChange?.(""); },
   }));
 
+  const handleDocNameChange = (val: string) => {
+    setDocumentName(val);
+    onDocNameChange?.(val);
+  };
+
   const handleChange = (val: string) => {
-    // Enforce word limit
     const words = val.trim().split(/\s+/).filter(Boolean);
     if (words.length > maxWords) {
       const truncated = words.slice(0, maxWords).join(" ");
@@ -108,6 +120,11 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
       const { text: finalText, truncated } = truncateToWordLimit(cleaned, maxWords);
       handleChange(finalText);
 
+      // Auto-fill document name from filename
+      if (!documentName.trim()) {
+        handleDocNameChange(stripExtension(file.name));
+      }
+
       if (truncated) {
         toast({ title: "Document Truncated", description: `Document truncated to the first ${maxWords.toLocaleString()} words.` });
       }
@@ -122,6 +139,18 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
 
   return (
     <div className="flex flex-col h-full">
+      {/* Document Name */}
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-card">
+        <FileText className="w-4 h-4 text-primary shrink-0" />
+        <Input
+          value={documentName}
+          onChange={(e) => handleDocNameChange(e.target.value)}
+          placeholder="Document Name (required)"
+          className="h-8 text-sm font-medium border-none shadow-none bg-transparent focus-visible:ring-0 px-1 placeholder:text-muted-foreground/50"
+          maxLength={150}
+        />
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-card">
         <input

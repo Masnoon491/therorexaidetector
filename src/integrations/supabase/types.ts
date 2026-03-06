@@ -106,6 +106,7 @@ export type Database = {
           ai_score: number | null
           created_at: string
           credits_used: number
+          document_name: string
           id: string
           ip_address: string | null
           plagiarism_score: number | null
@@ -117,6 +118,7 @@ export type Database = {
           ai_score?: number | null
           created_at?: string
           credits_used?: number
+          document_name?: string
           id?: string
           ip_address?: string | null
           plagiarism_score?: number | null
@@ -128,6 +130,7 @@ export type Database = {
           ai_score?: number | null
           created_at?: string
           credits_used?: number
+          document_name?: string
           id?: string
           ip_address?: string | null
           plagiarism_score?: number | null
