@@ -1,9 +1,10 @@
-import { FileText, History, Coins, CreditCard, Plus, Clock, Receipt, ShieldAlert } from "lucide-react";
+import { FileText, History, Coins, CreditCard, Plus, Clock, Receipt, ShieldAlert, Settings } from "lucide-react";
 import { useCredits } from "@/hooks/useCredits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { usePendingCount } from "@/hooks/usePendingCount";
 import { useNavigate } from "react-router-dom";
+import { formatDateBD } from "@/utils/dateFormat";
 import {
   Sidebar,
   SidebarContent,
@@ -18,15 +19,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface AppSidebarProps {
-  activeView: "editor" | "history" | "payments";
-  onViewChange: (view: "editor" | "history" | "payments") => void;
+  activeView: "editor" | "history" | "payments" | "settings";
+  onViewChange: (view: "editor" | "history" | "payments" | "settings") => void;
   onNewScan?: () => void;
 }
 
 export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { balance, daysRemaining } = useCredits();
+  const { balance, daysRemaining, expiresAt } = useCredits();
   const { user } = useAuth();
   const { isAdmin } = useAdminRole();
   const pendingCount = usePendingCount();
@@ -36,7 +37,10 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
     { title: "Editor", icon: FileText, view: "editor" as const },
     { title: "Scan History", icon: History, view: "history" as const },
     { title: "Payments", icon: Receipt, view: "payments" as const },
+    { title: "Settings", icon: Settings, view: "settings" as const },
   ];
+
+  const wordsFromCredits = (credits: number) => (credits * 100).toLocaleString();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border bg-card">
@@ -125,11 +129,27 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                     <p className="text-lg font-extrabold text-foreground font-mono tabular-nums text-center">
                       {balance != null ? balance.toLocaleString() : "—"} <span className="text-xs font-medium text-muted-foreground">credits</span>
                     </p>
+                    {balance != null && (
+                      <p className="text-[11px] text-muted-foreground text-center font-mono">
+                        ({wordsFromCredits(balance)} words)
+                      </p>
+                    )}
+
+                    {/* Expiry display */}
+                    {expiresAt && (
+                      <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+                        Expires: {formatDateBD(expiresAt)}
+                      </p>
+                    )}
 
                     {daysRemaining !== null && daysRemaining > 0 && (
-                      <div className="flex items-center justify-center gap-1 mt-1.5">
-                        <Clock className="w-3 h-3 text-primary" />
-                        <span className="text-[11px] font-semibold text-primary">
+                      <div className="flex items-center justify-center gap-1 mt-1">
+                        <Clock className={`w-3 h-3 ${daysRemaining < 3 ? "text-[hsl(45,100%,51%)]" : "text-primary"}`} />
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            daysRemaining < 3 ? "text-[hsl(45,100%,51%)]" : "text-primary"
+                          }`}
+                        >
                           {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
                         </span>
                       </div>
@@ -156,7 +176,7 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                     <Coins className="w-4 h-4 text-primary" />
                     <span className="text-xs font-bold text-foreground font-mono">{balance ?? "—"}</span>
                     {daysRemaining !== null && daysRemaining > 0 && (
-                      <span className="text-[9px] text-primary font-bold">{daysRemaining}d</span>
+                      <span className={`text-[9px] font-bold ${daysRemaining < 3 ? "text-[hsl(45,100%,51%)]" : "text-primary"}`}>{daysRemaining}d</span>
                     )}
                   </div>
                 )}

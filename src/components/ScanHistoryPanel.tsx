@@ -1,5 +1,6 @@
 import { History, FileText } from "lucide-react";
 import { useScanHistory } from "@/hooks/useScanHistory";
+import { formatDateBD } from "@/utils/dateFormat";
 
 function getRiskLabel(score: number | null) {
   if (score === null) return { label: "N/A", className: "bg-muted text-muted-foreground" };
@@ -60,7 +61,7 @@ const ScanHistoryPanel = () => {
                 return (
                   <tr key={entry.id} className={`${rowBg} border-t border-border`}>
                     <td className="py-2.5 px-3 text-muted-foreground font-mono">
-                      {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {formatDateBD(entry.created_at)}
                     </td>
                     <td className="py-2.5 px-3 text-foreground font-medium max-w-[200px] truncate">
                       {entry.title}

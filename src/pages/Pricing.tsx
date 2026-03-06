@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Mail, ArrowRight } from "lucide-react";
+import { Check, Mail, ArrowRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import TopNav from "@/components/TopNav";
@@ -135,6 +135,18 @@ const Pricing = () => {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#F8F9FA" }}>
       <TopNav />
+
+      {user && (
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 flex justify-end">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Editor
+          </button>
+        </div>
+      )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-14">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-1.5" style={{ color: "#2D3436" }}>

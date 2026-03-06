@@ -37,10 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Log IP on sign-in
+      if (_event === "SIGNED_IN" && session?.user) {
+        try {
+          const ipRes = await fetch("https://api.ipify.org?format=json");
+          const ipData = await ipRes.json();
+          await supabase.from("profiles").update({ last_ip: ipData.ip }).eq("id", session.user.id);
+        } catch { /* best-effort */ }
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
