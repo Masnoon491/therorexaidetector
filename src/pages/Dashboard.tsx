@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<"editor" | "history" | "payments" | "settings">("editor");
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
   const [currentWordCount, setCurrentWordCount] = useState(0);
+  const [lastScanMeta, setLastScanMeta] = useState<{ wordCount: number; creditsUsed: number; ipAddress: string | null }>({ wordCount: 0, creditsUsed: 0, ipAddress: null });
   const editorRef = useRef<ContentEditorRef>(null);
   const { toast } = useToast();
   const { user, loading } = useAuth();
@@ -69,7 +70,6 @@ const Dashboard = () => {
       const normalized = normalizeResponse(data);
       setResults(normalized);
 
-      // Capture IP for tracking
       let ipAddress: string | null = null;
       try {
         const ipRes = await fetch("https://api.ipify.org?format=json");
@@ -78,6 +78,7 @@ const Dashboard = () => {
         await supabase.from("profiles").update({ last_ip: ipAddress } as any).eq("id", user!.id);
       } catch { /* IP capture is best-effort */ }
 
+      setLastScanMeta({ wordCount, creditsUsed: creditsNeeded, ipAddress });
       await logScan({ title: `Scan - ${new Date().toLocaleString()}`, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded, ip_address: ipAddress } as any);
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });
@@ -139,7 +140,7 @@ const Dashboard = () => {
               {activeView === "editor" && results && (
                 <div className="border-t border-border">
                   <div className="max-w-4xl mx-auto w-full px-6 py-8">
-                    <ResultsPanel results={results} />
+                    <ResultsPanel results={results} wordCount={lastScanMeta.wordCount} creditsUsed={lastScanMeta.creditsUsed} ipAddress={lastScanMeta.ipAddress} />
                   </div>
                 </div>
               )}

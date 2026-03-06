@@ -1,6 +1,8 @@
-import { Download, Bot, ShieldCheck, FileWarning, AlertTriangle, Award } from "lucide-react";
+import { useState } from "react";
+import { Download, Bot, ShieldCheck, FileWarning, AlertTriangle, Award, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/types/scan";
+import { generatePdfReport } from "@/utils/generatePdfReport";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
@@ -225,10 +227,31 @@ function downloadReport(results: ScanResults) {
 /* ─── Main Results Panel ─── */
 interface ResultsPanelProps {
   results: ScanResults | null;
+  wordCount?: number;
+  creditsUsed?: number;
+  ipAddress?: string | null;
 }
 
-const ResultsPanel = ({ results }: ResultsPanelProps) => {
+const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = null }: ResultsPanelProps) => {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   if (!results) return null;
+
+  const handleDownloadPdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const auditId = `THX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      generatePdfReport(results, {
+        auditId,
+        scanDate: new Date(),
+        ipAddress,
+        wordCount,
+        creditsUsed,
+      });
+    } finally {
+      setTimeout(() => setIsGeneratingPdf(false), 500);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -241,12 +264,13 @@ const ResultsPanel = ({ results }: ResultsPanelProps) => {
           </p>
         </div>
         <Button
-          onClick={() => downloadReport(results)}
+          onClick={handleDownloadPdf}
+          disabled={isGeneratingPdf}
           variant="outline"
           className="gap-2 font-semibold border-border text-foreground hover:bg-secondary"
         >
-          <Download className="w-4 h-4" />
-          Download Report
+          {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {isGeneratingPdf ? "Generating PDF…" : "Download Report"}
         </Button>
       </div>
 
