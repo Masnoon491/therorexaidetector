@@ -36,7 +36,7 @@ const features = [
   "Professional 'Authenticity Certificate'",
 ];
 
-const PricingCard = ({ plan }: { plan: Plan }) => (
+const PricingCard = ({ plan, onGetStarted }: { plan: Plan; onGetStarted: (planName: string) => void }) => (
   <div
     className={`relative rounded-2xl border bg-white flex flex-col transition-all duration-200 ${
       plan.recommended
