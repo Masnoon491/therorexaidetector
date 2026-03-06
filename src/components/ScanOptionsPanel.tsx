@@ -1,31 +1,12 @@
-import { useState } from "react";
 import { Bot, FileWarning, BookOpen, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /* Mini half-circle gauge */
 function MiniGauge({ color }: { color: string }) {
-  const radius = 28;
-  const circumference = Math.PI * radius;
-
   return (
     <svg width="64" height="36" viewBox="0 0 64 36">
-      {/* Track */}
-      <path
-        d="M 6 34 A 26 26 0 0 1 58 34"
-        fill="none"
-        stroke="hsl(var(--muted))"
-        strokeWidth="5"
-        strokeLinecap="round"
-      />
-      {/* Colored ticks for visual interest */}
-      <path
-        d="M 6 34 A 26 26 0 0 1 32 8"
-        fill="none"
-        stroke={color}
-        strokeWidth="5"
-        strokeLinecap="round"
-        opacity="0.25"
-      />
+      <path d="M 6 34 A 26 26 0 0 1 58 34" fill="none" stroke="hsl(var(--muted))" strokeWidth="5" strokeLinecap="round" />
+      <path d="M 6 34 A 26 26 0 0 1 32 8" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" opacity="0.25" />
     </svg>
   );
 }
@@ -42,12 +23,12 @@ interface ScanOptionsPanelProps {
   onScan: () => void;
   isScanning: boolean;
   wordCount: number;
+  disabled?: boolean;
 }
 
 function ScanOptionCard({
   checked,
   onToggle,
-  icon: Icon,
   title,
   subtitle,
   gaugeColor,
@@ -63,27 +44,16 @@ function ScanOptionCard({
     <div
       onClick={onToggle}
       className={`relative flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${
-        checked
-          ? "border-primary bg-primary/5"
-          : "border-border bg-card hover:border-muted-foreground/30"
+        checked ? "border-primary bg-primary/5" : "border-border bg-card hover:border-muted-foreground/30"
       }`}
     >
-      {/* Checkbox */}
-      <div
-        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-          checked
-            ? "bg-primary border-primary"
-            : "border-muted-foreground/40 bg-card"
-        }`}
-      >
+      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-primary border-primary" : "border-muted-foreground/40 bg-card"}`}>
         {checked && (
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
-
-      {/* Text */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-foreground">{title}</p>
         {subtitle && (
@@ -93,8 +63,6 @@ function ScanOptionCard({
           </p>
         )}
       </div>
-
-      {/* Mini Gauge */}
       <div className="shrink-0">
         <MiniGauge color={gaugeColor} />
       </div>
@@ -102,57 +70,31 @@ function ScanOptionCard({
   );
 }
 
-const ScanOptionsPanel = ({ options, onOptionsChange, onScan, isScanning, wordCount }: ScanOptionsPanelProps) => {
+const ScanOptionsPanel = ({ options, onOptionsChange, onScan, isScanning, wordCount, disabled }: ScanOptionsPanelProps) => {
   const selectedCount = [options.aiScore, options.plagiarism, options.readability].filter(Boolean).length;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <p className="text-xs font-semibold text-primary text-right">
           {selectedCount} / 3 Scan Types Selected
         </p>
       </div>
 
-      {/* Options */}
       <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-        <ScanOptionCard
-          checked={options.aiScore}
-          onToggle={() => onOptionsChange({ ...options, aiScore: !options.aiScore })}
-          icon={Bot}
-          title="AI Score"
-          subtitle="Model: Lite 1.0.2"
-          gaugeColor="hsl(var(--destructive))"
-        />
-
-        <ScanOptionCard
-          checked={options.plagiarism}
-          onToggle={() => onOptionsChange({ ...options, plagiarism: !options.plagiarism })}
-          icon={FileWarning}
-          title="Plagiarism Score"
-          subtitle="Enter urls to exclude"
-          gaugeColor="hsl(var(--primary))"
-        />
-
-        <ScanOptionCard
-          checked={options.readability}
-          onToggle={() => onOptionsChange({ ...options, readability: !options.readability })}
-          icon={BookOpen}
-          title="Readability Score"
-          subtitle=""
-          gaugeColor="hsl(var(--warning))"
-        />
+        <ScanOptionCard checked={options.aiScore} onToggle={() => onOptionsChange({ ...options, aiScore: !options.aiScore })} icon={Bot} title="AI Score" subtitle="Model: Lite 1.0.2" gaugeColor="hsl(var(--destructive))" />
+        <ScanOptionCard checked={options.plagiarism} onToggle={() => onOptionsChange({ ...options, plagiarism: !options.plagiarism })} icon={FileWarning} title="Plagiarism Score" subtitle="Enter urls to exclude" gaugeColor="hsl(var(--primary))" />
+        <ScanOptionCard checked={options.readability} onToggle={() => onOptionsChange({ ...options, readability: !options.readability })} icon={BookOpen} title="Readability Score" subtitle="" gaugeColor="hsl(var(--warning))" />
       </div>
 
-      {/* Scan Button */}
       <div className="p-4 border-t border-border">
         <Button
           onClick={onScan}
-          disabled={wordCount < 100 || isScanning || selectedCount === 0}
+          disabled={wordCount < 100 || isScanning || selectedCount === 0 || disabled}
           className="w-full gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-sm"
         >
           <Bot className="w-4 h-4" />
-          {isScanning ? "Scanning…" : "Scan"}
+          {isScanning ? "Scanning…" : disabled ? "Credits Expired" : "Scan"}
         </Button>
       </div>
     </div>

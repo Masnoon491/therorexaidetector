@@ -1,10 +1,10 @@
-import { Mail, MessageCircle, LogOut, User } from "lucide-react";
+import { Mail, MessageCircle, LogOut, User, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
 const TopNav = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, signingOut } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -62,10 +62,15 @@ const TopNav = () => {
                 variant="ghost"
                 size="sm"
                 onClick={signOut}
+                disabled={signingOut}
                 className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Sign Out</span>
+                {signingOut ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <LogOut className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">{signingOut ? "Signing out…" : "Sign Out"}</span>
               </Button>
             </div>
           ) : (

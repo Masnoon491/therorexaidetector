@@ -29,9 +29,11 @@ const Dashboard = () => {
   const editorRef = useRef<ContentEditorRef>(null);
   const { toast } = useToast();
   const { user, loading } = useAuth();
-  const { balance, deductCredits, refetch: refetchCredits } = useCredits();
+  const { balance, daysRemaining, deductCredits, refetch: refetchCredits } = useCredits();
   const { logScan } = useScanHistory();
   const navigate = useNavigate();
+
+  const isExpired = daysRemaining !== null && daysRemaining === 0;
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth?mode=login");
@@ -44,6 +46,11 @@ const Dashboard = () => {
   };
 
   const handleScan = async () => {
+    if (isExpired) {
+      toast({ title: "Credits Expired", description: "Your credits have expired. Please purchase a new plan.", variant: "destructive" });
+      return;
+    }
+
     const text = editorRef.current?.getText() || "";
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
     const creditsNeeded = calculateCredits(wordCount);
@@ -90,6 +97,8 @@ const Dashboard = () => {
   if (loading) return null;
   if (!user) return null;
 
+  const scanDisabled = currentWordCount < 100 || isScanning || isExpired;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopNav />
@@ -119,6 +128,7 @@ const Dashboard = () => {
                       onScan={handleScan}
                       isScanning={isScanning}
                       wordCount={currentWordCount}
+                      disabled={isExpired}
                     />
                   </div>
                 </div>
@@ -149,10 +159,10 @@ const Dashboard = () => {
                 <div className="lg:hidden p-4 border-t border-border bg-card">
                   <button
                     onClick={handleScan}
-                    disabled={currentWordCount < 100 || isScanning}
+                    disabled={scanDisabled}
                     className="w-full py-3 rounded-lg font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
-                    {isScanning ? "Scanning…" : "Scan"}
+                    {isScanning ? "Scanning…" : isExpired ? "Credits Expired" : "Scan"}
                   </button>
                 </div>
               )}

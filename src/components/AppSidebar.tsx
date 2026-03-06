@@ -42,6 +42,8 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
 
   const wordsFromCredits = (credits: number) => (credits * 100).toLocaleString();
 
+  const isExpired = daysRemaining !== null && daysRemaining === 0;
+
   return (
     <Sidebar collapsible="icon" className="border-r border-border bg-card">
       <SidebarContent className="py-4 flex flex-col h-full">
@@ -136,9 +138,9 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                     )}
 
                     {/* Expiry display */}
-                    {expiresAt && (
+                    {expiresAt && !isExpired && (
                       <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-                        Expires: {formatDateBD(expiresAt)}
+                        Expires on: {formatDateBD(expiresAt)}
                       </p>
                     )}
 
@@ -150,12 +152,12 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                             daysRemaining < 3 ? "text-[hsl(45,100%,51%)]" : "text-primary"
                           }`}
                         >
-                          {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
+                          {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} left
                         </span>
                       </div>
                     )}
 
-                    {daysRemaining !== null && daysRemaining === 0 && (
+                    {isExpired && (
                       <p className="text-[11px] text-center font-semibold text-destructive mt-1.5">
                         Credits expired
                       </p>

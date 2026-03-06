@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  signingOut: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -13,30 +14,13 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  signingOut: false,
   signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 const WORD_LIMIT_KEY = "theorex_free_words_used";
-const AUTH_STORAGE_PATTERNS = ["supabase.auth.token", "sb-", "supabase", "auth-token", "pkce"];
-
-function clearAuthStorage() {
-  const clearMatchingKeys = (storage: Storage) => {
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < storage.length; i += 1) {
-      const key = storage.key(i);
-      if (!key) continue;
-      const lower = key.toLowerCase();
-      const shouldRemove = AUTH_STORAGE_PATTERNS.some((pattern) => lower.includes(pattern));
-      if (shouldRemove) keysToRemove.push(key);
-    }
-    keysToRemove.forEach((key) => storage.removeItem(key));
-  };
-
-  clearMatchingKeys(localStorage);
-  clearMatchingKeys(sessionStorage);
-}
 
 function getPreferredDisplayName(user: User): string | null {
   const metadata = user.user_metadata as Record<string, unknown> | undefined;
@@ -62,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
 
   const ensureUserBootstrap = async (nextSession: Session) => {
     const currentUser = nextSession.user;
@@ -106,10 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           void ensureUserBootstrap(nextSession);
         }, 0);
       }
-
-      if (event === "SIGNED_OUT") {
-        clearAuthStorage();
-      }
     });
 
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
@@ -128,19 +109,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.signOut();
     } catch (error) {
       console.error("Sign-out failed:", error);
     } finally {
       setUser(null);
       setSession(null);
-      clearAuthStorage();
-      window.location.href = "/";
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace("/");
     }
   };
 
-  return <AuthContext.Provider value={{ user, session, loading, signOut }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, session, loading, signingOut, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
-
