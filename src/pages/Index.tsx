@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import TopNav from "@/components/TopNav";
+import { PaymentHistory } from "@/components/PaymentHistory";
 import Footer from "@/components/Footer";
 import ContentEditor, { ContentEditorRef } from "@/components/ContentEditor";
 import ResultsPanel from "@/components/ResultsPanel";
@@ -59,7 +60,7 @@ function normalizeResponse(data: any): ScanResults {
 const Index = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResults | null>(null);
-  const [activeView, setActiveView] = useState<"editor" | "history">("editor");
+  const [activeView, setActiveView] = useState<"editor" | "history" | "payments">("editor");
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
   const [currentWordCount, setCurrentWordCount] = useState(0);
   const editorRef = useRef<ContentEditorRef>(null);
@@ -157,9 +158,13 @@ const Index = () => {
                       />
                     </div>
                   </div>
-                ) : (
+                ) : activeView === "history" ? (
                   <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
                     <ScanHistoryPanel />
+                  </main>
+                ) : (
+                  <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
+                    <PaymentHistory />
                   </main>
                 )}
 

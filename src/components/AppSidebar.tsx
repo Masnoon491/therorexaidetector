@@ -1,6 +1,8 @@
-import { FileText, History, Coins, CreditCard, Plus } from "lucide-react";
+import { FileText, History, Coins, CreditCard, Plus, Clock, Receipt, ShieldAlert } from "lucide-react";
 import { useCredits } from "@/hooks/useCredits";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminRole } from "@/hooks/useAdminRole";
+import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -15,20 +17,23 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface AppSidebarProps {
-  activeView: "editor" | "history";
-  onViewChange: (view: "editor" | "history") => void;
+  activeView: "editor" | "history" | "payments";
+  onViewChange: (view: "editor" | "history" | "payments") => void;
   onNewScan?: () => void;
 }
 
 export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { balance } = useCredits();
+  const { balance, daysRemaining } = useCredits();
   const { user } = useAuth();
+  const { isAdmin } = useAdminRole();
+  const navigate = useNavigate();
 
   const navItems = [
     { title: "Editor", icon: FileText, view: "editor" as const },
     { title: "Scan History", icon: History, view: "history" as const },
+    { title: "Payments", icon: Receipt, view: "payments" as const },
   ];
 
   return (
@@ -72,6 +77,25 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Admin Link */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/admin")}
+                    className="mx-2 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <ShieldAlert className="w-4 h-4 shrink-0" />
+                    {!collapsed && <span className="text-sm font-semibold">Admin Panel</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         {/* Balance section at bottom */}
         {user && (
           <SidebarGroup className="mt-auto">
@@ -85,9 +109,26 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                     <p className="text-lg font-extrabold text-foreground font-mono tabular-nums text-center">
                       {balance != null ? balance.toLocaleString() : "—"} <span className="text-xs font-medium text-muted-foreground">credits</span>
                     </p>
+
+                    {daysRemaining !== null && daysRemaining > 0 && (
+                      <div className="flex items-center justify-center gap-1 mt-1.5">
+                        <Clock className="w-3 h-3 text-primary" />
+                        <span className="text-[11px] font-semibold text-primary">
+                          {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
+                        </span>
+                      </div>
+                    )}
+
+                    {daysRemaining !== null && daysRemaining === 0 && (
+                      <p className="text-[11px] text-center font-semibold text-destructive mt-1.5">
+                        Credits expired
+                      </p>
+                    )}
+
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => navigate("/pricing")}
                       className="w-full mt-3 gap-1.5 text-xs font-semibold border-primary text-primary hover:bg-primary/10"
                     >
                       <CreditCard className="w-3.5 h-3.5" />
@@ -98,6 +139,9 @@ export function AppSidebar({ activeView, onViewChange, onNewScan }: AppSidebarPr
                   <div className="flex flex-col items-center gap-1">
                     <Coins className="w-4 h-4 text-primary" />
                     <span className="text-xs font-bold text-foreground font-mono">{balance ?? "—"}</span>
+                    {daysRemaining !== null && daysRemaining > 0 && (
+                      <span className="text-[9px] text-primary font-bold">{daysRemaining}d</span>
+                    )}
                   </div>
                 )}
               </div>
