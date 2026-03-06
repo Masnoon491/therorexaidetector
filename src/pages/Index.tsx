@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import TopNav from "@/components/TopNav";
+import { PaymentHistory } from "@/components/PaymentHistory";
 import Footer from "@/components/Footer";
 import ContentEditor, { ContentEditorRef } from "@/components/ContentEditor";
 import ResultsPanel from "@/components/ResultsPanel";
@@ -157,9 +158,13 @@ const Index = () => {
                       />
                     </div>
                   </div>
-                ) : (
+                ) : activeView === "history" ? (
                   <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
                     <ScanHistoryPanel />
+                  </main>
+                ) : (
+                  <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
+                    <PaymentHistory />
                   </main>
                 )}
 
