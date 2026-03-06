@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, X, Loader2, ShieldAlert, Database, Users } from "lucide-react";
+import { Check, X, Loader2, ShieldAlert, Database, Users, ScanSearch } from "lucide-react";
 import { formatDateBD } from "@/utils/dateFormat";
 import { useToast } from "@/hooks/use-toast";
 
