@@ -3,6 +3,7 @@ import { Download, Bot, ShieldCheck, FileWarning, AlertTriangle, Award, Loader2 
 import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/types/scan";
 import { generatePdfReport } from "@/utils/generatePdfReport";
+import { formatDateBD } from "@/utils/dateFormat";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
@@ -260,7 +261,7 @@ const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = nul
         <div>
           <h2 className="text-lg font-extrabold text-foreground tracking-tight">Analysis Report</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Scanned on {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+            Scanned on {formatDateBD(new Date())}
           </p>
         </div>
         <Button
