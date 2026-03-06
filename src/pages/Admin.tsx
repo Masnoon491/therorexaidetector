@@ -207,18 +207,31 @@ const Admin = () => {
       return;
     }
 
-    const { data: currentCredits } = await supabase
+    const { data: currentCredits, error: currentCreditError } = await supabase
       .from("user_credits")
       .select("balance")
       .eq("user_id", tx.user_id)
       .maybeSingle();
 
+    if (currentCreditError) {
+      toast({ title: "Credit lookup failed", description: currentCreditError.message, variant: "destructive" });
+      setApprovingId(null);
+      return;
+    }
+
     const newBalance = (currentCredits?.balance || 0) + tx.credits;
 
     const { error: creditError } = await supabase
       .from("user_credits")
-      .update({ balance: newBalance, expires_at: expiresAt.toISOString(), updated_at: now.toISOString() })
-      .eq("user_id", tx.user_id);
+      .upsert(
+        {
+          user_id: tx.user_id,
+          balance: newBalance,
+          expires_at: expiresAt.toISOString(),
+          updated_at: now.toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
 
     if (creditError) {
       toast({ title: "Credit update failed", description: creditError.message, variant: "destructive" });

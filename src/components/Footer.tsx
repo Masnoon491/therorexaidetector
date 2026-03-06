@@ -1,15 +1,16 @@
+import { forwardRef } from "react";
 import { Mail, MessageCircle } from "lucide-react";
 
-const Footer = () => {
+const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <footer className="border-t border-border bg-card mt-12">
+    <footer ref={ref} className="border-t border-border bg-card mt-12">
       <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col items-center gap-3 text-center">
         <div className="flex items-baseline gap-1.5">
           <span className="text-sm font-extrabold tracking-tight text-foreground">
             THEOREX
           </span>
           <span className="text-sm font-bold text-primary">
-            AI Text Detection
+            AI Detector
           </span>
         </div>
         <p className="text-[11px] text-muted-foreground tracking-wide">
@@ -40,6 +41,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
 
 export default Footer;
