@@ -11,7 +11,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Phone, Copy, ClipboardPaste } from "lucide-react";
 
 const allPlans = [
   { name: "Micro", price: "500", credits: 50 },
@@ -71,11 +71,12 @@ export function PaymentSubmitDialog({ open, onOpenChange, preselectedPlan }: Pro
         <DialogHeader>
           <DialogTitle className="text-foreground">Submit Payment</DialogTitle>
           <DialogDescription>
-            Enter your bKash/Nagad/Rocket Transaction ID after making payment.
+            Complete payment via bKash / Nagad / Rocket, then submit your Transaction ID.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
+          {/* Plan Selector */}
           <div className="space-y-2">
             <Label>Select Plan</Label>
             <Select value={selectedPlan} onValueChange={setSelectedPlan}>
@@ -92,6 +93,47 @@ export function PaymentSubmitDialog({ open, onOpenChange, preselectedPlan }: Pro
             </Select>
           </div>
 
+          {/* Dynamic Plan Summary & Payment Info */}
+          {plan && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+              <p className="text-sm font-bold text-foreground text-center">
+                Purchase {plan.name} Plan — {plan.price} TK
+              </p>
+
+              {/* bKash Number */}
+              <div className="flex items-center justify-center gap-2 rounded-md bg-background border border-border px-3 py-2">
+                <Phone className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-mono font-bold text-foreground tracking-wide">01819185751</span>
+                <span className="text-[10px] text-muted-foreground">(Personal)</span>
+              </div>
+
+              {/* Instructions */}
+              <ol className="space-y-1.5 text-[13px] text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center mt-0.5">1</span>
+                  Send <span className="font-bold text-foreground">{plan.price} BDT</span> using <span className="font-semibold text-foreground">"Send Money"</span>.
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
+                  <span className="flex items-center gap-1">
+                    <Copy className="w-3.5 h-3.5 shrink-0" /> Copy the <span className="font-semibold text-foreground">Transaction ID (TrxID)</span>.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
+                  <span className="flex items-center gap-1">
+                    <ClipboardPaste className="w-3.5 h-3.5 shrink-0" /> Paste it below.
+                  </span>
+                </li>
+              </ol>
+
+              <p className="text-[11px] text-center text-muted-foreground">
+                {plan.credits} Credits • 30 Day Validity
+              </p>
+            </div>
+          )}
+
+          {/* TrxID Input */}
           <div className="space-y-2">
             <Label>Transaction ID (TrxID)</Label>
             <Input
@@ -100,13 +142,6 @@ export function PaymentSubmitDialog({ open, onOpenChange, preselectedPlan }: Pro
               onChange={(e) => setTrxId(e.target.value)}
             />
           </div>
-
-          {plan && (
-            <div className="rounded-lg border border-border bg-secondary p-3 text-sm space-y-1">
-              <p className="text-foreground font-semibold">{plan.name} Plan</p>
-              <p className="text-muted-foreground">{plan.price} TK • {plan.credits} Credits • 30 Day Validity</p>
-            </div>
-          )}
 
           <Button
             onClick={handleSubmit}
