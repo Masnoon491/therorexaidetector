@@ -1,6 +1,6 @@
 import { Download, Bot, ShieldCheck, FileWarning, AlertTriangle, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ScanResults } from "@/pages/Index";
+import type { ScanResults } from "@/types/scan";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
