@@ -99,6 +99,7 @@ const PricingCard = ({ plan, onGetStarted }: { plan: Plan; onGetStarted: (planNa
       </ul>
 
       <button
+        onClick={() => onGetStarted(plan.name)}
         className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
           plan.recommended ? "hover:opacity-90" : "hover:bg-[#00B894] hover:text-white hover:border-[#00B894]"
         }`}
@@ -116,7 +117,20 @@ const PricingCard = ({ plan, onGetStarted }: { plan: Plan; onGetStarted: (planNa
 
 const Pricing = () => {
   const [tab, setTab] = useState<"individual" | "corporate">("individual");
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const plans = tab === "individual" ? individualPlans : corporatePlans;
+
+  const handleGetStarted = (planName: string) => {
+    if (!user) {
+      navigate("/auth?mode=signup");
+      return;
+    }
+    setSelectedPlan(planName);
+    setPaymentOpen(true);
+  };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#F8F9FA" }}>
@@ -153,7 +167,7 @@ const Pricing = () => {
         {/* Plan Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 items-start">
           {plans.map((plan) => (
-            <PricingCard key={plan.name} plan={plan} />
+            <PricingCard key={plan.name} plan={plan} onGetStarted={handleGetStarted} />
           ))}
         </div>
 
