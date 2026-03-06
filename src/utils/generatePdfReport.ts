@@ -74,9 +74,9 @@ export function generatePdfReport(results: ScanResults, meta: ReportMeta) {
 
   // Details box
   doc.setFillColor(LIGHT);
-  doc.roundedRect(MARGIN, y, CW, 52, 3, 3, "F");
+  doc.roundedRect(MARGIN, y, CW, 61, 3, 3, "F");
   doc.setDrawColor("#DEE2E6");
-  doc.roundedRect(MARGIN, y, CW, 52, 3, 3, "S");
+  doc.roundedRect(MARGIN, y, CW, 61, 3, 3, "S");
   y += 10;
 
   const detailLeft = MARGIN + 10;
