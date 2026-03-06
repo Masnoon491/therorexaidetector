@@ -192,6 +192,7 @@ const Pricing = () => {
       </main>
 
       <Footer />
+      <PaymentSubmitDialog open={paymentOpen} onOpenChange={setPaymentOpen} preselectedPlan={selectedPlan} />
     </div>
   );
 };
