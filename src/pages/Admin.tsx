@@ -452,9 +452,13 @@ const Admin = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <TopNav />
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <ShieldAlert className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-extrabold text-foreground">Theorex Admin Panel</h1>
+          <Button variant="outline" size="sm" className="ml-auto gap-1.5 font-semibold" onClick={() => navigate("/dashboard")}>
+            <ScanSearch className="w-4 h-4" />
+            Go to Editor
+          </Button>
           <div className="flex items-center gap-2 ml-4">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>

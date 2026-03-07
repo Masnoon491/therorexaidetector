@@ -42,6 +42,8 @@ export function addFreeWordsUsed(count: number) {
 
 export const FREE_WORD_LIMIT = 100;
 
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -124,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
+  const signOut = async (idle = false) => {
     if (signingOut) return;
     setSigningOut(true);
     try {
@@ -136,9 +138,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       localStorage.clear();
       sessionStorage.clear();
-      window.location.replace("/");
+      if (idle) {
+        window.location.replace("/auth?mode=login&reason=idle");
+      } else {
+        window.location.replace("/");
+      }
     }
   };
+
+  // ── Idle timeout: log out after 10 minutes of inactivity ──
+  useEffect(() => {
+    if (!user) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        signOut(true);
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const events: (keyof WindowEventMap)[] = ["mousemove", "keydown", "mousedown", "touchstart", "scroll"];
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, resetTimer));
+    };
+  }, [user, signingOut]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signingOut, signOut }}>

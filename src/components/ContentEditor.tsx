@@ -2,6 +2,10 @@ import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Upload, Trash2, Loader2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { calculateCredits } from "@/hooks/useCredits";
@@ -65,6 +69,7 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
     const [documentName, setDocumentName] = useState("");
     const [contextConfirmed, setContextConfirmed] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [wordLimitOpen, setWordLimitOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
@@ -98,6 +103,7 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
     const handleChange = (val: string) => {
       const words = val.trim().split(/\s+/).filter(Boolean);
       if (words.length > maxWords) {
+        setWordLimitOpen(true);
         const truncated = words.slice(0, maxWords).join(" ");
         setText(truncated);
         onTextChange?.(truncated);
@@ -166,15 +172,30 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
           </Button>
         </div>
 
+        {/* Word Limit AlertDialog */}
+        <AlertDialog open={wordLimitOpen} onOpenChange={setWordLimitOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive">Word Limit Exceeded</AlertDialogTitle>
+              <AlertDialogDescription>
+                Currently the editor supports a maximum of <strong>10,000 words</strong> per scan to ensure 100% accuracy. Your text has been truncated to 10,000 words. Please reduce your text and try again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setWordLimitOpen(false)}>Understood</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* ═══ ATTENTION: Scanning Rules ═══ */}
         <div className="px-4 py-3 border-b-2 border-[hsl(var(--navy,210_29%_17%))] bg-primary/10">
           <div className="flex items-start gap-2.5 mb-3">
-            <ShieldAlert className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+            <ShieldAlert className="w-6 h-6 text-primary shrink-0 mt-0.5" />
+            <p className="text-base lg:text-lg font-extrabold uppercase tracking-wider text-foreground">
               Attention — Scanning Rules
             </p>
           </div>
-          <div className="space-y-2.5 text-[11px] leading-relaxed text-foreground/80">
+          <div className="space-y-2.5 text-sm lg:text-[0.95rem] leading-relaxed text-foreground/80">
             <p>
               <span className="font-bold text-destructive">⚠️ CRITICAL:</span>{" "}
               Minimum <span className="font-extrabold text-foreground">200 words</span> required for AI Analysis. Quality detection requires data volume.
@@ -186,6 +207,10 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
             <p>
               <span className="font-bold text-[hsl(var(--warning))]">⚡ NOTE:</span>{" "}
               Mixed content (AI + Human) or text edited with software tools can trigger false signals. Apply human judgment to all results.
+            </p>
+            <p>
+              <span className="font-bold text-primary">📏 MAX CAPACITY:</span>{" "}
+              <span className="font-extrabold text-foreground">10,000 words</span> per scan. Ensure you provide full context for the most accurate AI Authenticity report.
             </p>
           </div>
 
