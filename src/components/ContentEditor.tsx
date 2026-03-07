@@ -23,6 +23,8 @@ export interface ContentEditorRef {
   getDocumentName: () => string;
   isContextConfirmed: () => boolean;
   clear: () => void;
+  triggerImport: () => void;
+  isImporting: () => boolean;
 }
 
 async function extractTextFromDocx(file: File): Promise<string> {
@@ -88,6 +90,8 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
         onDocNameChange?.("");
         onContextConfirmChange?.(false);
       },
+      triggerImport: () => fileInputRef.current?.click(),
+      isImporting: () => importing,
     }));
 
     const handleDocNameChange = (val: string) => {
@@ -164,18 +168,6 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
           <input ref={fileInputRef} type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleFileUpload} className="hidden" />
           <Button variant="ghost" size="icon" onClick={() => handleChange("")} className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" aria-label="Clear editor">
             <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-          <div className="flex-1" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importing}
-            className="gap-1.5 text-xs font-semibold border-navy text-foreground hover:bg-secondary transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 h-9"
-            aria-label="Import document"
-          >
-            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-            {importing ? "Importing…" : "Import Document"}
           </Button>
         </div>
 
