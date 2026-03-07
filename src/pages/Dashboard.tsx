@@ -9,19 +9,21 @@ import ResultsPanel from "@/components/ResultsPanel";
 import ScanningOverlay from "@/components/ScanningOverlay";
 import ScanHistoryPanel from "@/components/ScanHistoryPanel";
 import ScanOptionsPanel, { ScanOptions } from "@/components/ScanOptionsPanel";
+import ActionBar from "@/components/ActionBar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCredits, calculateCredits } from "@/hooks/useCredits";
-import { Bot } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/types/scan";
 import { normalizeResponse } from "@/utils/normalizeResponse";
+import { generatePdfReport } from "@/utils/generatePdfReport";
 
 const Dashboard = () => {
   const [isScanning, setIsScanning] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [results, setResults] = useState<ScanResults | null>(null);
   const [activeView, setActiveView] = useState<"editor" | "history" | "payments" | "settings">("editor");
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
@@ -40,6 +42,14 @@ const Dashboard = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth?mode=login");
   }, [user, loading, navigate]);
+
+  // Poll importing state from editor ref
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsImporting(editorRef.current?.isImporting() ?? false);
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNewScan = () => {
     setResults(null);
@@ -115,6 +125,25 @@ const Dashboard = () => {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!results) return;
+    setIsGeneratingPdf(true);
+    try {
+      const auditId = `THX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      generatePdfReport(results, {
+        auditId,
+        scanDate: new Date(),
+        ipAddress: lastScanMeta.ipAddress,
+        wordCount: lastScanMeta.wordCount,
+        creditsUsed: lastScanMeta.creditsUsed,
+        documentName: lastScanMeta.documentName || "Untitled Document",
+        userEmail: user?.email || undefined,
+      });
+    } finally {
+      setTimeout(() => setIsGeneratingPdf(false), 500);
+    }
+  };
+
   if (loading) return null;
   if (!user) return null;
 
@@ -141,20 +170,18 @@ const Dashboard = () => {
                     <div className="flex-1">
                       <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} onDocNameChange={setCurrentDocName} onContextConfirmChange={setContextConfirmed} />
                     </div>
-                    {/* Primary Scan CTA below editor */}
-                    <div className="flex justify-end px-4 py-3 border-t border-border bg-card">
-                      <Button
-                        onClick={handleScan}
-                        disabled={scanDisabled}
-                        className={`gap-2 font-bold h-12 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
-                          !scanDisabled ? "animate-pulse-subtle" : ""
-                        }`}
-                        aria-label="Start AI authenticity scan"
-                      >
-                        <Bot className="w-5 h-5" />
-                        {isScanning ? "Scanning…" : isExpired ? "Credits Expired" : "Scan"}
-                      </Button>
-                    </div>
+                    {/* Unified Action Bar */}
+                    <ActionBar
+                      onImport={() => editorRef.current?.triggerImport()}
+                      onScan={handleScan}
+                      onDownload={handleDownloadPdf}
+                      isImporting={isImporting}
+                      isScanning={isScanning}
+                      isGeneratingPdf={isGeneratingPdf}
+                      scanDisabled={scanDisabled}
+                      downloadDisabled={!results}
+                      isExpired={isExpired}
+                    />
                   </div>
                   <div className="w-72 shrink-0 bg-card border-l border-border hidden lg:flex flex-col">
                     <ScanOptionsPanel
@@ -189,22 +216,6 @@ const Dashboard = () => {
                   <div className="max-w-4xl mx-auto w-full px-6 py-8">
                     <ResultsPanel results={results} wordCount={lastScanMeta.wordCount} creditsUsed={lastScanMeta.creditsUsed} ipAddress={lastScanMeta.ipAddress} documentName={lastScanMeta.documentName} />
                   </div>
-                </div>
-              )}
-
-              {activeView === "editor" && (
-                <div className="lg:hidden p-4 border-t border-border bg-card">
-                  <Button
-                    onClick={handleScan}
-                    disabled={scanDisabled}
-                    className={`w-full gap-2 font-bold h-12 text-base bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
-                      !scanDisabled ? "animate-pulse-subtle" : ""
-                    }`}
-                    aria-label="Start AI authenticity scan"
-                  >
-                    <Bot className="w-5 h-5" />
-                    {isScanning ? "Scanning…" : isExpired ? "Credits Expired" : "Scan"}
-                  </Button>
                 </div>
               )}
             </div>

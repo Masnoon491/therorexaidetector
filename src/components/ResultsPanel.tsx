@@ -1,10 +1,6 @@
-import { useState } from "react";
-import { Download, Bot, ShieldCheck, FileWarning, AlertTriangle, Award, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bot, ShieldCheck, FileWarning, AlertTriangle, Award } from "lucide-react";
 import type { ScanResults } from "@/types/scan";
-import { generatePdfReport } from "@/utils/generatePdfReport";
 import { formatDateBD } from "@/utils/dateFormat";
-import { useAuth } from "@/contexts/AuthContext";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
@@ -236,28 +232,7 @@ interface ResultsPanelProps {
 }
 
 const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = null, documentName }: ResultsPanelProps) => {
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const { user } = useAuth();
-
   if (!results) return null;
-
-  const handleDownloadPdf = async () => {
-    setIsGeneratingPdf(true);
-    try {
-      const auditId = `THX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      generatePdfReport(results, {
-        auditId,
-        scanDate: new Date(),
-        ipAddress,
-        wordCount,
-        creditsUsed,
-        documentName: documentName || "Untitled Document",
-        userEmail: user?.email || undefined,
-      });
-    } finally {
-      setTimeout(() => setIsGeneratingPdf(false), 500);
-    }
-  };
 
   return (
     <div className="space-y-6 animate-fade-up">
