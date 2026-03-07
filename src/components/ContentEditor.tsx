@@ -1,7 +1,8 @@
 import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, Trash2, Loader2, FileText } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Upload, Trash2, Loader2, FileText, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { calculateCredits } from "@/hooks/useCredits";
 import mammoth from "mammoth";
@@ -183,6 +184,18 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
         >
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
+      </div>
+
+      {/* Scanning Guidelines */}
+      <div className="px-4 py-3 border-b border-border bg-secondary/30">
+        <Alert className="bg-muted/50 border-border">
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <AlertDescription className="text-[11px] leading-relaxed text-muted-foreground space-y-1.5 ml-2">
+            <p><strong className="text-foreground">Context Rule:</strong> Always scan the full text. Scanning fragments (e.g., 500 out of 1000 words) significantly increases the risk of false positives as the AI needs the full context.</p>
+            <p><strong className="text-foreground">Hybrid Alert:</strong> Hybrid text (Human + AI) or content edited with software may trigger false positive results.</p>
+            <p><strong className="text-foreground">Human Judgment:</strong> Results are probabilistic estimates. Final verification requires human judgment.</p>
+          </AlertDescription>
+        </Alert>
       </div>
 
       {/* Editor */}
