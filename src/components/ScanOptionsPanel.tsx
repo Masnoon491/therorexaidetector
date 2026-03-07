@@ -1,5 +1,4 @@
 import { Bot, FileWarning, BookOpen, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 /* Mini half-circle gauge */
 function MiniGauge({ color }: { color: string }) {
