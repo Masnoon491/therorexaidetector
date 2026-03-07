@@ -104,36 +104,42 @@ export type Database = {
       scan_history: {
         Row: {
           ai_score: number | null
+          content_snippet: string | null
           created_at: string
           credits_used: number
           document_name: string
           id: string
           ip_address: string | null
           plagiarism_score: number | null
+          risk_assessment: string | null
           title: string
           user_id: string
           word_count: number
         }
         Insert: {
           ai_score?: number | null
+          content_snippet?: string | null
           created_at?: string
           credits_used?: number
           document_name?: string
           id?: string
           ip_address?: string | null
           plagiarism_score?: number | null
+          risk_assessment?: string | null
           title?: string
           user_id: string
           word_count?: number
         }
         Update: {
           ai_score?: number | null
+          content_snippet?: string | null
           created_at?: string
           credits_used?: number
           document_name?: string
           id?: string
           ip_address?: string | null
           plagiarism_score?: number | null
+          risk_assessment?: string | null
           title?: string
           user_id?: string
           word_count?: number
