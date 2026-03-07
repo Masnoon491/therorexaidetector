@@ -1,4 +1,4 @@
-import { Bot, FileUp, DownloadCloud, Loader2 } from "lucide-react";
+import { Search, FileUp, DownloadCloud, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -66,13 +66,13 @@ const ActionBar = ({
                 {isScanning ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <Bot className="w-5 h-5" />
+                  <Search className="w-5 h-5" />
                 )}
                 {isScanning
                   ? "Scanning…"
                   : isExpired
                   ? "Credits Expired"
-                  : "Scan Now"}
+                  : "Scan for AI"}
               </Button>
             </div>
           </TooltipTrigger>
