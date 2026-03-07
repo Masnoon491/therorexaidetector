@@ -383,8 +383,7 @@ const Admin = () => {
 
     toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${formatDateBD(expiresAt)}.` });
     setApprovingId(null);
-    fetchTransactions();
-    fetchUserSummaries();
+    refreshAll();
   };
 
   const handleReject = async (tx: Transaction) => {
@@ -400,7 +399,7 @@ const Admin = () => {
       toast({ title: "Rejected", description: `Transaction ${tx.trx_id} has been rejected.` });
     }
     setRejectingId(null);
-    fetchTransactions();
+    refreshAll();
   };
 
   const handleTogglePostpone = async (u: UserSummary) => {
