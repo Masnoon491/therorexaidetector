@@ -292,8 +292,8 @@ const Admin = () => {
   }, [isAdmin]);
 
   const handleApprove = async (tx: Transaction) => {
-    if (inventory !== null && inventory < tx.credits) {
-      toast({ title: "Insufficient API Inventory", description: `Need ${tx.credits} credits but only ${inventory} remaining.`, variant: "destructive" });
+    if (inventory !== null && inventory.remaining_credits < tx.credits) {
+      toast({ title: "Insufficient API Inventory", description: `Need ${tx.credits} credits but only ${inventory.remaining_credits} remaining.`, variant: "destructive" });
       return;
     }
 
@@ -336,12 +336,12 @@ const Admin = () => {
     }
 
     if (inventory !== null) {
-      const newInventory = inventory - tx.credits;
-      await supabase
+      const newRemaining = inventory.remaining_credits - tx.credits;
+      await (supabase as any)
         .from("api_inventory")
-        .update({ remaining_credits: newInventory, updated_at: now.toISOString() })
+        .update({ remaining_credits: newRemaining, updated_at: now.toISOString() })
         .not("id", "is", null);
-      setInventory(newInventory);
+      fetchInventory();
     }
 
     toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${formatDateBD(expiresAt)}.` });
