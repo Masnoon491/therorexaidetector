@@ -6,7 +6,7 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { Upload, Trash2, Loader2, FileText, ShieldAlert } from "lucide-react";
+import { UploadCloud, Trash2, Loader2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { calculateCredits } from "@/hooks/useCredits";
 import mammoth from "mammoth";
@@ -162,13 +162,20 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-card">
           <input ref={fileInputRef} type="file" accept=".txt,.pdf,.doc,.docx" onChange={handleFileUpload} className="hidden" />
-          <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-1.5 text-xs font-semibold text-foreground hover:bg-secondary">
-            {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            {importing ? "Importing…" : "Import"}
+          <Button variant="ghost" size="icon" onClick={() => handleChange("")} className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" aria-label="Clear editor">
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
           <div className="flex-1" />
-          <Button variant="ghost" size="icon" onClick={() => handleChange("")} className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-            <Trash2 className="w-3.5 h-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="gap-1.5 text-xs font-semibold border-navy text-foreground hover:bg-secondary transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 h-9"
+            aria-label="Import document"
+          >
+            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+            {importing ? "Importing…" : "Import Document"}
           </Button>
         </div>
 

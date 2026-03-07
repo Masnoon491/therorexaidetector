@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCredits, calculateCredits } from "@/hooks/useCredits";
+import { Bot } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/types/scan";
 import { normalizeResponse } from "@/utils/normalizeResponse";
 
@@ -139,6 +141,20 @@ const Dashboard = () => {
                     <div className="flex-1">
                       <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} onDocNameChange={setCurrentDocName} onContextConfirmChange={setContextConfirmed} />
                     </div>
+                    {/* Primary Scan CTA below editor */}
+                    <div className="flex justify-end px-4 py-3 border-t border-border bg-card">
+                      <Button
+                        onClick={handleScan}
+                        disabled={scanDisabled}
+                        className={`gap-2 font-bold h-12 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
+                          !scanDisabled ? "animate-pulse-subtle" : ""
+                        }`}
+                        aria-label="Start AI authenticity scan"
+                      >
+                        <Bot className="w-5 h-5" />
+                        {isScanning ? "Scanning…" : isExpired ? "Credits Expired" : "Scan"}
+                      </Button>
+                    </div>
                   </div>
                   <div className="w-72 shrink-0 bg-card border-l border-border hidden lg:flex flex-col">
                     <ScanOptionsPanel
@@ -178,13 +194,17 @@ const Dashboard = () => {
 
               {activeView === "editor" && (
                 <div className="lg:hidden p-4 border-t border-border bg-card">
-                  <button
+                  <Button
                     onClick={handleScan}
                     disabled={scanDisabled}
-                    className="w-full py-3 rounded-lg font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    className={`w-full gap-2 font-bold h-12 text-base bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
+                      !scanDisabled ? "animate-pulse-subtle" : ""
+                    }`}
+                    aria-label="Start AI authenticity scan"
                   >
+                    <Bot className="w-5 h-5" />
                     {isScanning ? "Scanning…" : isExpired ? "Credits Expired" : "Scan"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
