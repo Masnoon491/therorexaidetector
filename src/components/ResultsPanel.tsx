@@ -237,35 +237,11 @@ const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = nul
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div>
           <h2 className="text-lg font-extrabold text-foreground tracking-tight">Analysis Report</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Scanned on {formatDateBD(new Date())}
           </p>
-        </div>
-        <Button
-          onClick={handleDownloadPdf}
-          disabled={isGeneratingPdf}
-          className="gap-2 font-bold h-12 text-base bg-navy text-navy-foreground hover:bg-navy/90 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
-          aria-label="Generate certified audit report PDF"
-        >
-          {isGeneratingPdf ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-          {isGeneratingPdf ? "Generating PDF…" : "Generate Certified Audit Report (PDF)"}
-        </Button>
-      </div>
-
-      {/* Mobile FAB for download */}
-      <div className="fixed bottom-6 right-6 z-50 lg:hidden">
-        <Button
-          onClick={handleDownloadPdf}
-          disabled={isGeneratingPdf}
-          size="icon"
-          className="w-14 h-14 rounded-full bg-navy text-navy-foreground hover:bg-navy/90 shadow-xl transition-all duration-200 hover:shadow-2xl hover:-translate-y-0.5"
-          aria-label="Generate certified audit report PDF"
-        >
-          {isGeneratingPdf ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
-        </Button>
       </div>
 
       {/* AI Detection — Gauges + Grade */}
