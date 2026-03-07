@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -9,7 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, X, Loader2, ShieldAlert, Database, Users, ScanSearch, Gift, BarChart3, AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Check, X, Loader2, ShieldAlert, Database, Users, ScanSearch, Gift, BarChart3, AlertTriangle, RefreshCw, Search, Pause, Play, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatDateBD, formatDateTimeBD } from "@/utils/dateFormat";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +44,7 @@ interface UserSummary {
   activation_date: string | null;
   expiry_date: string | null;
   last_scan_date: string | null;
+  status: string;
 }
 
 interface ScanAuditEntry {
@@ -51,6 +56,8 @@ interface ScanAuditEntry {
   credits_used: number;
   ai_score: number | null;
 }
+
+const USERS_PER_PAGE = 100;
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -65,16 +72,24 @@ const Admin = () => {
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
   const [scanAudit, setScanAudit] = useState<ScanAuditEntry[]>([]);
 
-  // Business summary state
   const [totalActiveSubscriptions, setTotalActiveSubscriptions] = useState(0);
   const [cumulativeUsage, setCumulativeUsage] = useState(0);
 
-  // Stock refill
   const [refillAmount, setRefillAmount] = useState("");
 
-  // Give Credit dialog
   const [creditDialogOpen, setCreditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
+
+  // Search & pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<UserSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Postpone loading
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
@@ -113,35 +128,31 @@ const Admin = () => {
   };
 
   const fetchUserSummaries = async () => {
-    // Get all profiles (every registered user)
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, email, last_ip");
+      .select("id, email, last_ip, status");
 
     if (!profiles) return;
 
     const allUserIds = profiles.map((p) => p.id);
 
-    // Get approved transactions
     const { data: txData } = await supabase
       .from("payment_transactions")
       .select("user_id, credits, status, approved_at, expires_at, plan_name, created_at")
       .eq("status", "approved");
 
-    // Get credit balances
     const { data: creditData } = await supabase
       .from("user_credits")
       .select("user_id, balance, expires_at");
 
-    // Get scan usage from scans table
     const { data: scanData } = await supabase
       .from("scans")
       .select("user_id, credits_used, created_at");
 
     const emailMap = new Map(profiles.map((p) => [p.id, p.email || "Unknown"]));
     const ipMap = new Map(profiles.map((p) => [p.id, p.last_ip || null]));
+    const statusMap = new Map(profiles.map((p) => [p.id, (p as any).status || "active"]));
 
-    // Plan name: latest approved transaction per user
     const planMap = new Map<string, string>();
     const activationMap = new Map<string, string>();
     const expiryFromTxMap = new Map<string, string>();
@@ -159,7 +170,6 @@ const Admin = () => {
       }
     });
 
-    // Total used from scans
     const usedMap = new Map<string, number>();
     const lastScanMap = new Map<string, string>();
     scanData?.forEach((s) => {
@@ -176,7 +186,6 @@ const Admin = () => {
       expiryFromCreditsMap.set(c.user_id, c.expires_at);
     });
 
-    // Compute business summary
     const now = new Date();
     let activeCount = 0;
     let totalUsage = 0;
@@ -198,6 +207,7 @@ const Admin = () => {
         activation_date: activationMap.get(userId) || null,
         expiry_date: expiryStr,
         last_scan_date: lastScanMap.get(userId) || null,
+        status: statusMap.get(userId) || "active",
       };
     });
 
@@ -249,9 +259,7 @@ const Admin = () => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("admin_inventory")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "api_inventory" }, () => {
-        fetchInventory();
-      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "api_inventory" }, () => fetchInventory())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
@@ -284,12 +292,26 @@ const Admin = () => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("admin_user_credits")
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_credits" }, () => {
-        fetchUserSummaries();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_credits" }, () => fetchUserSummaries())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
+
+  // Filtered & paginated users
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return userSummaries;
+    const q = searchQuery.toLowerCase();
+    return userSummaries.filter((u) => u.email.toLowerCase().includes(q));
+  }, [userSummaries, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * USERS_PER_PAGE;
+    return filteredUsers.slice(start, start + USERS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
+
+  // Reset page when search changes
+  useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
   const handleApprove = async (tx: Transaction) => {
     if (inventory !== null && inventory.remaining_credits < tx.credits) {
@@ -364,6 +386,44 @@ const Admin = () => {
     }
     setRejectingId(null);
     fetchTransactions();
+  };
+
+  const handleTogglePostpone = async (u: UserSummary) => {
+    setTogglingId(u.user_id);
+    const newStatus = u.status === "postponed" ? "active" : "postponed";
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status: newStatus } as any)
+      .eq("id", u.user_id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({
+        title: newStatus === "postponed" ? "User Postponed" : "User Reactivated",
+        description: `${u.email} is now ${newStatus}.`,
+      });
+      fetchUserSummaries();
+    }
+    setTogglingId(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
+    const { error } = await supabase.rpc("admin_delete_user", { _target_user_id: deleteTarget.user_id });
+
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "User Deleted", description: `${deleteTarget.email} and all associated data have been permanently removed.` });
+      fetchUserSummaries();
+      fetchTransactions();
+      fetchScanAudit();
+    }
+    setDeleting(false);
+    setDeleteTarget(null);
   };
 
   if (authLoading || roleLoading) {
@@ -478,18 +538,36 @@ const Admin = () => {
 
         {/* Master User Table */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">User Management</h2>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">User Management</h2>
+              <span className="text-xs text-muted-foreground">({filteredUsers.length} users)</span>
+            </div>
           </div>
+
+          {/* Search Bar */}
+          <div className="relative mb-3 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by email address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10"
+            />
+          </div>
+
           <div className="bg-card rounded-lg border border-border overflow-x-auto">
-            {userSummaries.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground text-sm">No registered users yet.</div>
+            {paginatedUsers.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                {searchQuery ? "No users found matching your search." : "No registered users yet."}
+              </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>User Email</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead className="text-right">Purchased</TableHead>
@@ -497,13 +575,21 @@ const Admin = () => {
                     <TableHead className="text-right">Balance</TableHead>
                     <TableHead>Expiry</TableHead>
                     <TableHead>Last Scan</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {userSummaries.map((u) => (
-                    <TableRow key={u.user_id}>
+                  {paginatedUsers.map((u) => (
+                    <TableRow key={u.user_id} className={u.status === "postponed" ? "opacity-60" : ""}>
                       <TableCell className="text-sm font-medium text-foreground">{u.email}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={u.status === "active" ? "default" : "destructive"}
+                          className={u.status === "active" ? "bg-primary text-primary-foreground" : "bg-orange-500 text-white border-orange-500"}
+                        >
+                          {u.status === "active" ? "Active" : "Postponed"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-xs">
                         <Badge variant="outline" className="text-xs">{u.plan_name}</Badge>
                       </TableCell>
@@ -518,14 +604,40 @@ const Admin = () => {
                         {u.last_scan_date ? formatDateBD(u.last_scan_date) : "—"}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1 text-xs"
-                          onClick={() => { setSelectedUser(u); setCreditDialogOpen(true); }}
-                        >
-                          <Gift className="w-3.5 h-3.5" /> Give Credit
-                        </Button>
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-xs"
+                            onClick={() => { setSelectedUser(u); setCreditDialogOpen(true); }}
+                          >
+                            <Gift className="w-3.5 h-3.5" /> Credit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-xs border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                            disabled={togglingId === u.user_id}
+                            onClick={() => handleTogglePostpone(u)}
+                          >
+                            {togglingId === u.user_id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : u.status === "postponed" ? (
+                              <Play className="w-3.5 h-3.5" />
+                            ) : (
+                              <Pause className="w-3.5 h-3.5" />
+                            )}
+                            {u.status === "postponed" ? "Activate" : "Postpone"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-xs border-destructive text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteTarget(u)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -533,6 +645,35 @@ const Admin = () => {
               </Table>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="gap-1"
+                >
+                  Next <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Global Scan Audit */}
@@ -675,6 +816,29 @@ const Admin = () => {
           onComplete={() => { fetchUserSummaries(); fetchInventory(); }}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Permanently Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deleteTarget?.email}</strong> and all associated data including scans, credits, payment history, and roles. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Delete Forever
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
