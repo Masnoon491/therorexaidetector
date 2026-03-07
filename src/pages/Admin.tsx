@@ -249,8 +249,8 @@ const Admin = () => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("admin_inventory")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "api_inventory" }, (payload) => {
-        setInventory((payload.new as any).remaining_credits);
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "api_inventory" }, () => {
+        fetchInventory();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
