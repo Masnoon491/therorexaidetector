@@ -93,9 +93,12 @@ const ScanOptionsPanel = ({ options, onOptionsChange, onScan, isScanning, wordCo
         <Button
           onClick={onScan}
           disabled={wordCount < 200 || isScanning || selectedCount === 0 || disabled || !hasDocName || !contextConfirmed}
-          className="w-full gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-sm"
+          className={`w-full gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-12 text-base transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
+            wordCount >= 200 && hasDocName && contextConfirmed && !disabled && !isScanning ? "animate-pulse-subtle" : ""
+          }`}
+          aria-label="Start AI authenticity scan"
         >
-          <Bot className="w-4 h-4" />
+          <Bot className="w-5 h-5" />
           {isScanning ? "Scanning…" : disabled ? "Credits Expired" : "Scan"}
         </Button>
       </div>
