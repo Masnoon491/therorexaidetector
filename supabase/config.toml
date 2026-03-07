@@ -2,3 +2,6 @@ project_id = "vavkbjollryybdvuroyu"
 
 [functions.scan-content]
 verify_jwt = false
+
+[functions.notify-payment]
+verify_jwt = false

@@ -70,6 +70,18 @@ export function PaymentSubmitDialog({ open, onOpenChange, preselectedPlan }: Pro
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Submitted!", description: "Your payment is pending admin verification." });
+
+      // Fire-and-forget: notify admin via email
+      supabase.functions.invoke("notify-payment", {
+        body: {
+          userEmail: user.email,
+          planName: plan.name,
+          trxId: trxId.trim(),
+          amountBdt: plan.price,
+          credits: plan.credits,
+        },
+      }).catch(() => {/* silent – don't block UX */});
+
       setTrxId("");
       setSelectedPlan("");
       onOpenChange(false);
