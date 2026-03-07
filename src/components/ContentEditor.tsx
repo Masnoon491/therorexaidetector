@@ -148,6 +148,8 @@ const ContentEditor = forwardRef<ContentEditorRef, ContentEditorProps>(({ onText
           placeholder="Document Name (required)"
           className="h-8 text-sm font-medium border-none shadow-none bg-transparent focus-visible:ring-0 px-1 placeholder:text-muted-foreground/50"
           maxLength={150}
+          required
+          aria-required="true"
         />
       </div>
 
