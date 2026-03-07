@@ -17,18 +17,21 @@ export type Database = {
       api_inventory: {
         Row: {
           id: string
+          manual_base_stock: number
           remaining_credits: number
           total_credits: number
           updated_at: string
         }
         Insert: {
           id?: string
+          manual_base_stock?: number
           remaining_credits?: number
           total_credits?: number
           updated_at?: string
         }
         Update: {
           id?: string
+          manual_base_stock?: number
           remaining_credits?: number
           total_credits?: number
           updated_at?: string
