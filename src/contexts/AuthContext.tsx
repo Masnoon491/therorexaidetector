@@ -87,7 +87,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && nextSession?.user) {
-        setTimeout(() => {
+        setTimeout(async () => {
+          // Check if user is postponed
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("status")
+            .eq("id", nextSession.user.id)
+            .maybeSingle();
+
+          if (profile?.status === "postponed") {
+            await supabase.auth.signOut();
+            setUser(null);
+            setSession(null);
+            alert("Your account has been temporarily postponed. Please contact support.");
+            window.location.replace("/");
+            return;
+          }
+
           void ensureUserBootstrap(nextSession);
         }, 0);
       }

@@ -33,6 +33,27 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Check if account is postponed
+        const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+        if (loggedInUser) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("status")
+            .eq("id", loggedInUser.id)
+            .maybeSingle();
+          if (profile?.status === "postponed") {
+            await supabase.auth.signOut();
+            toast({
+              title: "Account Postponed",
+              description: "Your account has been temporarily postponed. Please contact support.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+        }
+
         navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({
