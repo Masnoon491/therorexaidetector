@@ -149,6 +149,7 @@ const Dashboard = () => {
                       wordCount={currentWordCount}
                       disabled={isExpired}
                       hasDocName={!!currentDocName.trim()}
+                      contextConfirmed={contextConfirmed}
                     />
                   </div>
                 </div>

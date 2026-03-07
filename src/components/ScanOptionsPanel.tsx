@@ -25,6 +25,7 @@ interface ScanOptionsPanelProps {
   wordCount: number;
   disabled?: boolean;
   hasDocName?: boolean;
+  contextConfirmed?: boolean;
 }
 
 function ScanOptionCard({
@@ -71,7 +72,7 @@ function ScanOptionCard({
   );
 }
 
-const ScanOptionsPanel = ({ options, onOptionsChange, onScan, isScanning, wordCount, disabled, hasDocName = true }: ScanOptionsPanelProps) => {
+const ScanOptionsPanel = ({ options, onOptionsChange, onScan, isScanning, wordCount, disabled, hasDocName = true, contextConfirmed = false }: ScanOptionsPanelProps) => {
   const selectedCount = [options.aiScore, options.plagiarism, options.readability].filter(Boolean).length;
 
   return (
@@ -91,7 +92,7 @@ const ScanOptionsPanel = ({ options, onOptionsChange, onScan, isScanning, wordCo
       <div className="p-4 border-t border-border">
         <Button
           onClick={onScan}
-          disabled={wordCount < 100 || isScanning || selectedCount === 0 || disabled || !hasDocName}
+          disabled={wordCount < 200 || isScanning || selectedCount === 0 || disabled || !hasDocName || !contextConfirmed}
           className="w-full gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-sm"
         >
           <Bot className="w-4 h-4" />
