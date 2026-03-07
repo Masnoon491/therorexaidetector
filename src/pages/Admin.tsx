@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Check, X, Loader2, ShieldAlert, Database, Users, ScanSearch } from "lucide-react";
+import { Check, X, Loader2, ShieldAlert, Database, Users, ScanSearch, Gift, BarChart3 } from "lucide-react";
 import { formatDateBD } from "@/utils/dateFormat";
 import { useToast } from "@/hooks/use-toast";
+import GiveCreditDialog from "@/components/admin/GiveCreditDialog";
 
 interface Transaction {
   id: string;
@@ -30,12 +31,14 @@ interface Transaction {
 interface UserSummary {
   user_id: string;
   email: string;
+  plan_name: string;
   total_purchased: number;
   total_used: number;
   current_balance: number;
   last_ip: string | null;
   activation_date: string | null;
   expiry_date: string | null;
+  last_scan_date: string | null;
 }
 
 interface ScanAuditEntry {
@@ -60,6 +63,14 @@ const Admin = () => {
   const [inventory, setInventory] = useState<number | null>(null);
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
   const [scanAudit, setScanAudit] = useState<ScanAuditEntry[]>([]);
+
+  // Business summary state
+  const [totalActiveSubscriptions, setTotalActiveSubscriptions] = useState(0);
+  const [cumulativeUsage, setCumulativeUsage] = useState(0);
+
+  // Give Credit dialog
+  const [creditDialogOpen, setCreditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
@@ -98,75 +109,102 @@ const Admin = () => {
   };
 
   const fetchUserSummaries = async () => {
-    const { data: txData } = await supabase
-      .from("payment_transactions")
-      .select("user_id, credits, status, approved_at, expires_at")
-      .eq("status", "approved");
-
-    const { data: creditData } = await supabase
-      .from("user_credits")
-      .select("user_id, balance");
-
-    const { data: scanData } = await supabase
-      .from("scan_history")
-      .select("user_id, credits_used");
-
-    const allUserIds = new Set<string>();
-    txData?.forEach((t) => allUserIds.add(t.user_id));
-    creditData?.forEach((c) => allUserIds.add(c.user_id));
-
+    // Get all profiles (every registered user)
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, email, last_ip")
-      .in("id", [...allUserIds]);
+      .select("id, email, last_ip");
 
-    const emailMap = new Map(profiles?.map((p) => [p.id, p.email || "Unknown"]) || []);
-    const ipMap = new Map(profiles?.map((p) => [p.id, (p as any).last_ip || null]) || []);
+    if (!profiles) return;
 
-    const purchasedMap = new Map<string, number>();
+    const allUserIds = profiles.map((p) => p.id);
+
+    // Get approved transactions
+    const { data: txData } = await supabase
+      .from("payment_transactions")
+      .select("user_id, credits, status, approved_at, expires_at, plan_name, created_at")
+      .eq("status", "approved");
+
+    // Get credit balances
+    const { data: creditData } = await supabase
+      .from("user_credits")
+      .select("user_id, balance, expires_at");
+
+    // Get scan usage from scans table
+    const { data: scanData } = await supabase
+      .from("scans")
+      .select("user_id, credits_used, created_at");
+
+    const emailMap = new Map(profiles.map((p) => [p.id, p.email || "Unknown"]));
+    const ipMap = new Map(profiles.map((p) => [p.id, p.last_ip || null]));
+
+    // Plan name: latest approved transaction per user
+    const planMap = new Map<string, string>();
     const activationMap = new Map<string, string>();
-    const expiryMap = new Map<string, string>();
+    const expiryFromTxMap = new Map<string, string>();
+    const purchasedMap = new Map<string, number>();
+
+    txData?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     txData?.forEach((t) => {
+      if (!planMap.has(t.user_id)) planMap.set(t.user_id, t.plan_name);
       purchasedMap.set(t.user_id, (purchasedMap.get(t.user_id) || 0) + t.credits);
-      // Use earliest approval as activation, latest expiry
       if (t.approved_at && (!activationMap.has(t.user_id) || t.approved_at < activationMap.get(t.user_id)!)) {
         activationMap.set(t.user_id, t.approved_at);
       }
-      if (t.expires_at && (!expiryMap.has(t.user_id) || t.expires_at > expiryMap.get(t.user_id)!)) {
-        expiryMap.set(t.user_id, t.expires_at);
+      if (t.expires_at && (!expiryFromTxMap.has(t.user_id) || t.expires_at > expiryFromTxMap.get(t.user_id)!)) {
+        expiryFromTxMap.set(t.user_id, t.expires_at);
       }
     });
 
+    // Total used from scans
     const usedMap = new Map<string, number>();
+    const lastScanMap = new Map<string, string>();
     scanData?.forEach((s) => {
       usedMap.set(s.user_id, (usedMap.get(s.user_id) || 0) + s.credits_used);
+      if (!lastScanMap.has(s.user_id) || s.created_at > lastScanMap.get(s.user_id)!) {
+        lastScanMap.set(s.user_id, s.created_at);
+      }
     });
 
     const balanceMap = new Map<string, number>();
+    const expiryFromCreditsMap = new Map<string, string | null>();
     creditData?.forEach((c) => {
       balanceMap.set(c.user_id, c.balance);
+      expiryFromCreditsMap.set(c.user_id, c.expires_at);
     });
 
-    const summaries: UserSummary[] = [];
-    purchasedMap.forEach((purchased, userId) => {
-      summaries.push({
+    // Compute business summary
+    const now = new Date();
+    let activeCount = 0;
+    let totalUsage = 0;
+
+    scanData?.forEach((s) => { totalUsage += s.credits_used; });
+
+    const summaries: UserSummary[] = allUserIds.map((userId) => {
+      const expiryStr = expiryFromTxMap.get(userId) || expiryFromCreditsMap.get(userId) || null;
+      if (expiryStr && new Date(expiryStr) > now) activeCount++;
+
+      return {
         user_id: userId,
         email: emailMap.get(userId) || "Unknown",
-        total_purchased: purchased,
+        plan_name: planMap.get(userId) || "—",
+        total_purchased: purchasedMap.get(userId) || 0,
         total_used: usedMap.get(userId) || 0,
         current_balance: balanceMap.get(userId) || 0,
         last_ip: ipMap.get(userId) || null,
         activation_date: activationMap.get(userId) || null,
-        expiry_date: expiryMap.get(userId) || null,
-      });
+        expiry_date: expiryStr,
+        last_scan_date: lastScanMap.get(userId) || null,
+      };
     });
 
+    setTotalActiveSubscriptions(activeCount);
+    setCumulativeUsage(totalUsage);
     setUserSummaries(summaries);
   };
 
   const fetchScanAudit = async () => {
     const { data: scans } = await supabase
-      .from("scan_history")
+      .from("scans")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(100);
@@ -183,7 +221,7 @@ const Admin = () => {
         scans.map((s: any) => ({
           id: s.id,
           user_email: emailMap.get(s.user_id) || "Unknown",
-          document_name: s.document_name || s.title || "Untitled",
+          document_name: s.document_name || "Untitled",
           scan_date: s.created_at,
           word_count: s.word_count,
           credits_used: s.credits_used,
@@ -202,7 +240,7 @@ const Admin = () => {
     }
   }, [isAdmin]);
 
-  // Real-time listener for api_inventory
+  // Real-time listeners
   useEffect(() => {
     if (!isAdmin) return;
     const channel = supabase
@@ -214,7 +252,6 @@ const Admin = () => {
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
 
-  // Real-time listener for payment_transactions
   useEffect(() => {
     if (!isAdmin) return;
     const channel = supabase
@@ -227,13 +264,23 @@ const Admin = () => {
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
 
-  // Real-time listener for scan_history
   useEffect(() => {
     if (!isAdmin) return;
     const channel = supabase
       .channel("admin_scans")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "scan_history" }, () => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "scans" }, () => {
         fetchScanAudit();
+        fetchUserSummaries();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin_user_credits")
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_credits" }, () => {
         fetchUserSummaries();
       })
       .subscribe();
@@ -261,31 +308,22 @@ const Admin = () => {
       return;
     }
 
-    const { data: currentCredits, error: currentCreditError } = await supabase
+    const { data: currentCredits } = await supabase
       .from("user_credits")
       .select("balance")
       .eq("user_id", tx.user_id)
       .maybeSingle();
 
-    if (currentCreditError) {
-      toast({ title: "Credit lookup failed", description: currentCreditError.message, variant: "destructive" });
-      setApprovingId(null);
-      return;
-    }
-
     const newBalance = (currentCredits?.balance || 0) + tx.credits;
 
     const { error: creditError } = await supabase
       .from("user_credits")
-      .upsert(
-        {
-          user_id: tx.user_id,
-          balance: newBalance,
-          expires_at: expiresAt.toISOString(),
-          updated_at: now.toISOString(),
-        },
-        { onConflict: "user_id" },
-      );
+      .upsert({
+        user_id: tx.user_id,
+        balance: newBalance,
+        expires_at: expiresAt.toISOString(),
+        updated_at: now.toISOString(),
+      }, { onConflict: "user_id" });
 
     if (creditError) {
       toast({ title: "Credit update failed", description: creditError.message, variant: "destructive" });
@@ -340,58 +378,93 @@ const Admin = () => {
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
         <div className="flex items-center gap-3 mb-6">
           <ShieldAlert className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-extrabold text-foreground">Theorex Admin — Payment Verification</h1>
+          <h1 className="text-2xl font-extrabold text-foreground">Theorex Admin Panel</h1>
         </div>
 
-        {/* API Inventory Card */}
-        <div className="mb-6 rounded-lg border border-border bg-card p-5 flex items-center gap-4">
-          <div className="p-3 rounded-full bg-primary/10">
-            <Database className="w-6 h-6 text-primary" />
+        {/* Global Business Summary */}
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-border bg-card p-5 flex items-center gap-4">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Subscriptions</p>
+              <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">{totalActiveSubscriptions}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">API Credit Stock</p>
-            <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
-              {inventory !== null ? inventory.toLocaleString() : "—"}{" "}
-              <span className="text-sm font-medium text-muted-foreground">/ 10,269 credits</span>
-            </p>
+          <div className="rounded-lg border border-border bg-card p-5 flex items-center gap-4">
+            <div className="p-3 rounded-full bg-destructive/10">
+              <BarChart3 className="w-6 h-6 text-destructive" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cumulative Usage</p>
+              <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">{cumulativeUsage.toLocaleString()} <span className="text-sm font-medium text-muted-foreground">credits</span></p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-5 flex items-center gap-4">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Database className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">API Credit Stock</p>
+              <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
+                {inventory !== null ? inventory.toLocaleString() : "—"}{" "}
+                <span className="text-sm font-medium text-muted-foreground">remaining</span>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* User Tracking Table */}
+        {/* Master User Table */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">User Credit Tracking</h2>
+            <h2 className="text-lg font-bold text-foreground">User Management</h2>
           </div>
           <div className="bg-card rounded-lg border border-border overflow-x-auto">
             {userSummaries.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground text-sm">No users with purchased credits yet.</div>
+              <div className="p-6 text-center text-muted-foreground text-sm">No registered users yet.</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>User Email</TableHead>
+                    <TableHead>Plan</TableHead>
                     <TableHead>IP Address</TableHead>
-                    <TableHead className="text-right">Total Purchased</TableHead>
-                    <TableHead className="text-right">Total Used</TableHead>
-                    <TableHead className="text-right">Current Balance</TableHead>
-                    <TableHead>Activation Date</TableHead>
-                    <TableHead>Expiry Date</TableHead>
+                    <TableHead className="text-right">Purchased</TableHead>
+                    <TableHead className="text-right">Spent</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead>Expiry</TableHead>
+                    <TableHead>Last Scan</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {userSummaries.map((u) => (
                     <TableRow key={u.user_id}>
                       <TableCell className="text-sm font-medium text-foreground">{u.email}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="outline" className="text-xs">{u.plan_name}</Badge>
+                      </TableCell>
                       <TableCell className="text-xs font-mono text-muted-foreground">{u.last_ip || "—"}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-primary font-mono tabular-nums">{u.total_purchased}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-destructive font-mono tabular-nums">{u.total_used}</TableCell>
                       <TableCell className="text-sm font-bold text-right text-foreground font-mono tabular-nums">{u.current_balance}</TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {u.activation_date ? formatDateBD(u.activation_date) : "—"}
+                        {u.expiry_date ? formatDateBD(u.expiry_date) : "—"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {u.expiry_date ? formatDateBD(u.expiry_date) : "—"}
+                        {u.last_scan_date ? formatDateBD(u.last_scan_date) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 text-xs"
+                          onClick={() => { setSelectedUser(u); setCreditDialogOpen(true); }}
+                        >
+                          <Gift className="w-3.5 h-3.5" /> Give Credit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -414,24 +487,24 @@ const Admin = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead>User Email</TableHead>
-                     <TableHead>Document Name</TableHead>
-                     <TableHead>Scan Date</TableHead>
-                     <TableHead className="text-right">Words Scanned</TableHead>
-                     <TableHead className="text-right">Credits Deducted</TableHead>
-                     <TableHead className="text-right">AI Score</TableHead>
+                    <TableHead>User Email</TableHead>
+                    <TableHead>Document Name</TableHead>
+                    <TableHead>Scan Date</TableHead>
+                    <TableHead className="text-right">Words</TableHead>
+                    <TableHead className="text-right">Credits</TableHead>
+                    <TableHead className="text-right">AI Score</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {scanAudit.map((s) => (
                     <TableRow key={s.id}>
-                       <TableCell className="text-sm font-medium text-foreground">{s.user_email}</TableCell>
-                       <TableCell className="text-sm text-foreground max-w-[180px] truncate">{s.document_name}</TableCell>
-                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{formatDateBD(s.scan_date)}</TableCell>
+                      <TableCell className="text-sm font-medium text-foreground">{s.user_email}</TableCell>
+                      <TableCell className="text-sm text-foreground max-w-[180px] truncate">{s.document_name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">{formatDateBD(s.scan_date)}</TableCell>
                       <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">{s.word_count.toLocaleString()}</TableCell>
                       <TableCell className="text-sm font-bold font-mono tabular-nums text-right text-destructive">{s.credits_used}</TableCell>
                       <TableCell className="text-sm font-mono tabular-nums text-right text-foreground">
-                        {s.ai_score !== null ? `${Math.round(s.ai_score * 100)}%` : "—"}
+                        {s.ai_score !== null ? `${s.ai_score}%` : "—"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -441,7 +514,7 @@ const Admin = () => {
           </div>
         </div>
 
-        {/* Transactions Table */}
+        {/* Payment Transactions */}
         <h2 className="text-lg font-bold text-foreground mb-3">Payment Transactions</h2>
         <div className="bg-card rounded-lg border border-border overflow-x-auto">
           {loading ? (
@@ -529,6 +602,18 @@ const Admin = () => {
           )}
         </div>
       </main>
+
+      {/* Give Credit Dialog */}
+      {selectedUser && (
+        <GiveCreditDialog
+          open={creditDialogOpen}
+          onOpenChange={setCreditDialogOpen}
+          userId={selectedUser.user_id}
+          userEmail={selectedUser.email}
+          currentBalance={selectedUser.current_balance}
+          onComplete={() => { fetchUserSummaries(); fetchInventory(); }}
+        />
+      )}
     </div>
   );
 };
