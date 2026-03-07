@@ -82,12 +82,12 @@ const Admin = () => {
   }, [authLoading, roleLoading, isAdmin, user, navigate]);
 
   const fetchInventory = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("api_inventory")
-      .select("remaining_credits")
+      .select("remaining_credits, manual_base_stock, updated_at")
       .limit(1)
       .maybeSingle();
-    if (data) setInventory(data.remaining_credits);
+    if (data) setInventory(data);
   };
 
   const fetchTransactions = async () => {
