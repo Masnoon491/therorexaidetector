@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Theorex Alerts <onboarding@resend.dev>',
+        from: 'Theorex Consulting <onboarding@resend.dev>',
         to: ['salestheorex@gmail.com'],
         subject: `🚨 New Credit Request: ${userEmail}`,
         html: htmlBody,
