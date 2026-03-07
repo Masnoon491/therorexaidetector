@@ -88,13 +88,25 @@ const Admin = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Postpone loading
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  // Last refreshed timestamp
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchTransactions(), fetchInventory(), fetchUserSummaries(), fetchScanAudit()]);
+    setLastRefreshed(new Date());
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
     if (!authLoading && !roleLoading && !isAdmin && user) navigate("/");
   }, [authLoading, roleLoading, isAdmin, user, navigate]);
+
+  // 5-minute auto-refresh
+  useEffect(() => {
+    if (!isAdmin) return;
+    const interval = setInterval(() => { refreshAll(); }, 300_000);
+    return () => clearInterval(interval);
+  }, [isAdmin, refreshAll]);
 
   const fetchInventory = async () => {
     const { data } = await (supabase as any)
