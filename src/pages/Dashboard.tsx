@@ -18,6 +18,7 @@ import { useCredits, calculateCredits } from "@/hooks/useCredits";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import type { ScanResults } from "@/types/scan";
 import { normalizeResponse } from "@/utils/normalizeResponse";
+import { getRiskAssessment } from "@/utils/dateFormat";
 
 const Dashboard = () => {
   const [isScanning, setIsScanning] = useState(false);
