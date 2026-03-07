@@ -386,7 +386,7 @@ const Admin = () => {
         </div>
 
         {/* Global Business Summary */}
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-lg border border-border bg-card p-5 flex items-center gap-4">
             <div className="p-3 rounded-full bg-primary/10">
               <Users className="w-6 h-6 text-primary" />
@@ -405,19 +405,76 @@ const Admin = () => {
               <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">{cumulativeUsage.toLocaleString()} <span className="text-sm font-medium text-muted-foreground">credits</span></p>
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-card p-5 flex items-center gap-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <Database className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">API Credit Stock</p>
-              <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">
-                {inventory !== null ? inventory.toLocaleString() : "—"}{" "}
-                <span className="text-sm font-medium text-muted-foreground">remaining</span>
-              </p>
-            </div>
-          </div>
         </div>
+
+        {/* Inventory Engine */}
+        {(() => {
+          const baseStock = inventory?.manual_base_stock ?? 0;
+          const netRemaining = baseStock - cumulativeUsage;
+          const isLowStock = netRemaining <= 10;
+          return (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Database className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">Global API Inventory</h2>
+              </div>
+              {isLowStock && (
+                <div className="mb-3 flex items-center gap-2 rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive text-sm font-semibold">
+                  <AlertTriangle className="w-5 h-5 shrink-0" />
+                  Stock Depleted: Please update your manual base.
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Manual Base Stock</p>
+                  <p className="text-2xl font-extrabold text-foreground font-mono tabular-nums">{baseStock.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">(−) Total User Usage</p>
+                  <p className="text-2xl font-extrabold text-destructive font-mono tabular-nums">{cumulativeUsage.toLocaleString()}</p>
+                </div>
+                <div className={`rounded-lg border p-5 ${isLowStock ? "border-destructive bg-destructive/5" : "border-border bg-card"}`}>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">(=) Net Remaining Stock</p>
+                  <p className={`text-2xl font-extrabold font-mono tabular-nums ${isLowStock ? "text-destructive" : "text-primary"}`}>{netRemaining.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border border-border bg-card p-5 flex flex-col gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refill Base Stock</p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="e.g. 15000"
+                      value={refillAmount}
+                      onChange={(e) => setRefillAmount(e.target.value)}
+                      className="h-9 text-sm font-mono"
+                    />
+                    <Button
+                      size="sm"
+                      className="gap-1 shrink-0"
+                      disabled={!refillAmount || Number(refillAmount) <= 0}
+                      onClick={async () => {
+                        const newBase = Number(refillAmount);
+                        if (isNaN(newBase) || newBase <= 0) return;
+                        await (supabase as any)
+                          .from("api_inventory")
+                          .update({ manual_base_stock: newBase, updated_at: new Date().toISOString() })
+                          .not("id", "is", null);
+                        setRefillAmount("");
+                        fetchInventory();
+                        toast({ title: "Stock Updated", description: `Manual base stock set to ${newBase.toLocaleString()}.` });
+                      }}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> Update
+                    </Button>
+                  </div>
+                  {inventory && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Last updated: {formatDateTimeBD(inventory.updated_at)}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Master User Table */}
         <div className="mb-6">
