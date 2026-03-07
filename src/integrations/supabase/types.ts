@@ -85,6 +85,7 @@ export type Database = {
           email: string | null
           id: string
           last_ip: string | null
+          status: string
         }
         Insert: {
           avatar_url?: string | null
@@ -93,6 +94,7 @@ export type Database = {
           email?: string | null
           id: string
           last_ip?: string | null
+          status?: string
         }
         Update: {
           avatar_url?: string | null
@@ -101,6 +103,7 @@ export type Database = {
           email?: string | null
           id?: string
           last_ip?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -232,6 +235,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: {
+        Args: { _target_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
