@@ -1,17 +1,23 @@
 import { useState } from "react";
-import { History, FileText, Search } from "lucide-react";
+import { History, FileText, Search, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useScanHistory } from "@/hooks/useScanHistory";
-import { formatDateBD } from "@/utils/dateFormat";
+import { formatDateTimeBD } from "@/utils/dateFormat";
 
 function getRiskLabel(score: number | null) {
   if (score === null) return { label: "N/A", className: "bg-muted text-muted-foreground" };
   const pct = Math.round(score * 100);
-  if (pct <= 14) return { label: "CLEAN", className: "bg-primary text-primary-foreground" };
-  if (pct <= 39) return { label: "LOW", className: "bg-[hsl(100,50%,45%)] text-primary-foreground" };
-  if (pct <= 59) return { label: "MEDIUM", className: "bg-[hsl(var(--warning))] text-primary-foreground" };
-  if (pct <= 84) return { label: "HIGH", className: "bg-destructive text-destructive-foreground" };
-  return { label: "VERY HIGH", className: "bg-[hsl(4,74%,38%)] text-destructive-foreground" };
+  if (pct <= 30) return { label: "Low Risk", className: "bg-[#00B894] text-white" };
+  if (pct <= 70) return { label: "Moderate Risk", className: "bg-[hsl(var(--warning))] text-white" };
+  return { label: "High Risk", className: "bg-destructive text-destructive-foreground" };
+}
+
+function getScoreBadgeClass(score: number | null) {
+  if (score === null) return "bg-muted text-muted-foreground";
+  const pct = Math.round(score * 100);
+  if (pct <= 30) return "bg-[#00B894]/15 text-[#00B894] border border-[#00B894]/30";
+  if (pct <= 70) return "bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))] border border-[hsl(var(--warning))]/30";
+  return "bg-destructive/15 text-destructive border border-destructive/30";
 }
 
 const ScanHistoryPanel = () => {
@@ -21,6 +27,8 @@ const ScanHistoryPanel = () => {
   const filtered = search.trim()
     ? history.filter((e) => e.title.toLowerCase().includes(search.trim().toLowerCase()))
     : history;
+
+  const totalCreditsSpent = history.reduce((sum, e) => sum + e.credits_used, 0);
 
   return (
     <div className="space-y-6">
@@ -32,6 +40,21 @@ const ScanHistoryPanel = () => {
         <p className="text-sm text-muted-foreground mt-1">
           View your past AI text audits and results.
         </p>
+      </div>
+
+      {/* Summary Card */}
+      <div className="bg-[#1B263B] rounded-lg p-5 flex items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-[#00B894]/20 flex items-center justify-center shrink-0">
+          <CreditCard className="w-5 h-5 text-[#00B894]" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-white/60 uppercase tracking-wider">Total Credits Spent</p>
+          <p className="text-2xl font-extrabold text-white tabular-nums">{totalCreditsSpent.toLocaleString()}</p>
+        </div>
+        <div className="ml-auto text-right">
+          <p className="text-xs font-medium text-white/60 uppercase tracking-wider">Total Scans</p>
+          <p className="text-2xl font-extrabold text-white tabular-nums">{history.length}</p>
+        </div>
       </div>
 
       {/* Search */}
@@ -66,31 +89,34 @@ const ScanHistoryPanel = () => {
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-secondary">
-                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
                 <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Document</th>
+                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Date & Time</th>
                 <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Words</th>
                 <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">AI Score</th>
-                <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Risk</th>
+                <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Risk Level</th>
                 <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase tracking-wider">Credits</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((entry, i) => {
                 const risk = getRiskLabel(entry.ai_score);
+                const scoreBadge = getScoreBadgeClass(entry.ai_score);
                 const rowBg = i % 2 === 0 ? "bg-card" : "bg-secondary/50";
                 return (
                   <tr key={entry.id} className={`${rowBg} border-t border-border`}>
-                    <td className="py-2.5 px-3 text-muted-foreground font-mono">
-                      {formatDateBD(entry.created_at)}
+                    <td className="py-2.5 px-3 max-w-[200px]">
+                      <span className="font-bold text-[#1B263B] dark:text-foreground truncate block">{entry.title}</span>
                     </td>
-                    <td className="py-2.5 px-3 text-foreground font-medium max-w-[200px] truncate">
-                      {entry.title}
+                    <td className="py-2.5 px-3 text-muted-foreground font-mono text-[11px]">
+                      {formatDateTimeBD(entry.created_at)}
                     </td>
                     <td className="py-2.5 px-3 text-center font-mono text-foreground">
                       {entry.word_count.toLocaleString()}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-bold text-foreground">
-                      {entry.ai_score !== null ? `${Math.round(entry.ai_score * 100)}%` : "—"}
+                    <td className="py-2.5 px-3 text-center">
+                      <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md ${scoreBadge}`}>
+                        {entry.ai_score !== null ? `${Math.round(entry.ai_score * 100)}%` : "—"}
+                      </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md ${risk.className}`}>
@@ -98,7 +124,7 @@ const ScanHistoryPanel = () => {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center font-mono text-muted-foreground">
-                      {entry.credits_used}
+                      {entry.credits_used} Credits
                     </td>
                   </tr>
                 );
