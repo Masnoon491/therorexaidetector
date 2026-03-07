@@ -1,0 +1,1 @@
+SELECT 1; -- no-op, previous migration applied all changes except the already-existing realtime subscription
