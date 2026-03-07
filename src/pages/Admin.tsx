@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
@@ -91,10 +91,25 @@ const Admin = () => {
   // Postpone loading
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Last refreshed timestamp
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchTransactions(), fetchInventory(), fetchUserSummaries(), fetchScanAudit()]);
+    setLastRefreshed(new Date());
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?mode=login");
     if (!authLoading && !roleLoading && !isAdmin && user) navigate("/");
   }, [authLoading, roleLoading, isAdmin, user, navigate]);
+
+  // 5-minute auto-refresh
+  useEffect(() => {
+    if (!isAdmin) return;
+    const interval = setInterval(() => { refreshAll(); }, 300_000);
+    return () => clearInterval(interval);
+  }, [isAdmin, refreshAll]);
 
   const fetchInventory = async () => {
     const { data } = await (supabase as any)
@@ -368,8 +383,7 @@ const Admin = () => {
 
     toast({ title: "Approved", description: `${tx.credits} credits added. Expires ${formatDateBD(expiresAt)}.` });
     setApprovingId(null);
-    fetchTransactions();
-    fetchUserSummaries();
+    refreshAll();
   };
 
   const handleReject = async (tx: Transaction) => {
@@ -385,7 +399,7 @@ const Admin = () => {
       toast({ title: "Rejected", description: `Transaction ${tx.trx_id} has been rejected.` });
     }
     setRejectingId(null);
-    fetchTransactions();
+    refreshAll();
   };
 
   const handleTogglePostpone = async (u: UserSummary) => {
@@ -403,7 +417,7 @@ const Admin = () => {
         title: newStatus === "postponed" ? "User Postponed" : "User Reactivated",
         description: `${u.email} is now ${newStatus}.`,
       });
-      fetchUserSummaries();
+      refreshAll();
     }
     setTogglingId(null);
   };
@@ -418,9 +432,7 @@ const Admin = () => {
       toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "User Deleted", description: `${deleteTarget.email} and all associated data have been permanently removed.` });
-      fetchUserSummaries();
-      fetchTransactions();
-      fetchScanAudit();
+      refreshAll();
     }
     setDeleting(false);
     setDeleteTarget(null);
@@ -443,6 +455,15 @@ const Admin = () => {
         <div className="flex items-center gap-3 mb-6">
           <ShieldAlert className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-extrabold text-foreground">Theorex Admin Panel</h1>
+          <div className="flex items-center gap-2 ml-4">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Live · {new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Dhaka" }).format(lastRefreshed)}
+            </span>
+          </div>
         </div>
 
         {/* Global Business Summary */}
@@ -813,7 +834,7 @@ const Admin = () => {
           userId={selectedUser.user_id}
           userEmail={selectedUser.email}
           currentBalance={selectedUser.current_balance}
-          onComplete={() => { fetchUserSummaries(); fetchInventory(); }}
+          onComplete={() => refreshAll()}
         />
       )}
 
