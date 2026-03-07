@@ -61,13 +61,16 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [inventory, setInventory] = useState<number | null>(null);
+  const [inventory, setInventory] = useState<{ remaining_credits: number; manual_base_stock: number; updated_at: string } | null>(null);
   const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
   const [scanAudit, setScanAudit] = useState<ScanAuditEntry[]>([]);
 
   // Business summary state
   const [totalActiveSubscriptions, setTotalActiveSubscriptions] = useState(0);
   const [cumulativeUsage, setCumulativeUsage] = useState(0);
+
+  // Stock refill
+  const [refillAmount, setRefillAmount] = useState("");
 
   // Give Credit dialog
   const [creditDialogOpen, setCreditDialogOpen] = useState(false);
