@@ -417,7 +417,7 @@ const Admin = () => {
         title: newStatus === "postponed" ? "User Postponed" : "User Reactivated",
         description: `${u.email} is now ${newStatus}.`,
       });
-      fetchUserSummaries();
+      refreshAll();
     }
     setTogglingId(null);
   };
@@ -432,9 +432,7 @@ const Admin = () => {
       toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "User Deleted", description: `${deleteTarget.email} and all associated data have been permanently removed.` });
-      fetchUserSummaries();
-      fetchTransactions();
-      fetchScanAudit();
+      refreshAll();
     }
     setDeleting(false);
     setDeleteTarget(null);
