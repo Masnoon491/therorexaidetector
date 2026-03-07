@@ -25,6 +25,17 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Show idle timeout message
+  useEffect(() => {
+    if (searchParams.get("reason") === "idle") {
+      toast({
+        title: "Session Expired",
+        description: "You have been logged out due to 10 minutes of inactivity for your security.",
+        variant: "destructive",
+      });
+    }
+  }, []);
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
