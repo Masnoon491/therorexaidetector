@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { ScanResults } from "@/types/scan";
 import { generatePdfReport } from "@/utils/generatePdfReport";
 import { formatDateBD } from "@/utils/dateFormat";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ─── Risk tier helper ─── */
 function getRiskTier(pct: number) {
@@ -236,6 +237,7 @@ interface ResultsPanelProps {
 
 const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = null, documentName }: ResultsPanelProps) => {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const { user } = useAuth();
 
   if (!results) return null;
 
@@ -250,6 +252,7 @@ const ResultsPanel = ({ results, wordCount = 0, creditsUsed = 0, ipAddress = nul
         wordCount,
         creditsUsed,
         documentName: documentName || "Untitled Document",
+        userEmail: user?.email || undefined,
       });
     } finally {
       setTimeout(() => setIsGeneratingPdf(false), 500);
