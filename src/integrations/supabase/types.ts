@@ -146,6 +146,42 @@ export type Database = {
         }
         Relationships: []
       }
+      scans: {
+        Row: {
+          ai_score: number
+          created_at: string
+          credits_used: number
+          document_name: string
+          human_score: number
+          id: string
+          risk_assessment: string
+          user_id: string
+          word_count: number
+        }
+        Insert: {
+          ai_score?: number
+          created_at?: string
+          credits_used?: number
+          document_name?: string
+          human_score?: number
+          id?: string
+          risk_assessment?: string
+          user_id: string
+          word_count?: number
+        }
+        Update: {
+          ai_score?: number
+          created_at?: string
+          credits_used?: number
+          document_name?: string
+          human_score?: number
+          id?: string
+          risk_assessment?: string
+          user_id?: string
+          word_count?: number
+        }
+        Relationships: []
+      }
       user_credits: {
         Row: {
           balance: number

@@ -15,10 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCredits, calculateCredits } from "@/hooks/useCredits";
-import { useScanHistory } from "@/hooks/useScanHistory";
 import type { ScanResults } from "@/types/scan";
 import { normalizeResponse } from "@/utils/normalizeResponse";
-import { getRiskAssessment } from "@/utils/dateFormat";
 
 const Dashboard = () => {
   const [isScanning, setIsScanning] = useState(false);
@@ -32,7 +30,6 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const { balance, daysRemaining, deductCredits, refetch: refetchCredits } = useCredits();
-  const { logScan } = useScanHistory();
   const navigate = useNavigate();
 
   const isExpired = daysRemaining !== null && daysRemaining === 0;
@@ -73,11 +70,12 @@ const Dashboard = () => {
       if (data?.isRateLimit) { toast({ title: "Rate Limited", description: "Too many requests. Please wait.", variant: "destructive" }); return; }
       if (data?.error) { throw new Error(typeof data.error === "string" ? data.error : JSON.stringify(data.details || data.error)); }
 
-      await deductCredits(creditsNeeded);
-      refetchCredits();
-
       const normalized = normalizeResponse(data);
       setResults(normalized);
+
+      const aiScore = Math.max(0, Math.min(100, Math.round((normalized.ai?.score ?? 0) * 100)));
+      const humanScore = Math.max(0, Math.min(100, 100 - aiScore));
+      const riskAssessment = aiScore > 70 ? "High Risk" : aiScore < 30 ? "Low Risk" : "Moderate Risk";
 
       let ipAddress: string | null = null;
       try {
@@ -85,13 +83,27 @@ const Dashboard = () => {
         const ipData = await ipRes.json();
         ipAddress = ipData.ip;
         await supabase.from("profiles").update({ last_ip: ipAddress } as any).eq("id", user!.id);
-      } catch { /* IP capture is best-effort */ }
+      } catch {
+        /* IP capture is best-effort */
+      }
 
       const docName = editorRef.current?.getDocumentName() || "Untitled Document";
-      const contentSnippet = text.slice(0, 300);
-      const riskAssessment = getRiskAssessment(normalized.ai?.score ?? null);
       setLastScanMeta({ wordCount, creditsUsed: creditsNeeded, ipAddress, documentName: docName });
-      await logScan({ title: docName, document_name: docName, word_count: wordCount, ai_score: normalized.ai?.score ?? null, plagiarism_score: normalized.plagiarism?.score ?? null, credits_used: creditsNeeded, ip_address: ipAddress, content_snippet: contentSnippet, risk_assessment: riskAssessment } as any);
+
+      const { error: insertError } = await (supabase as any).from("scans").insert({
+        user_id: user!.id,
+        document_name: docName,
+        ai_score: aiScore,
+        human_score: humanScore,
+        word_count: wordCount,
+        credits_used: creditsNeeded,
+        risk_assessment: riskAssessment,
+      });
+      if (insertError) throw new Error(insertError.message);
+
+      await deductCredits(creditsNeeded);
+      refetchCredits();
+
       toast({ title: "Scan saved to history", description: `${wordCount} words scanned using ${creditsNeeded} credits.` });
     } catch (err: any) {
       toast({ title: "Scan Failed", description: err.message || "Something went wrong.", variant: "destructive" });

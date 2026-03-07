@@ -4,10 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export interface ScanHistoryEntry {
   id: string;
-  title: string;
+  user_id: string;
+  document_name: string;
+  ai_score: number;
+  human_score: number;
+  risk_assessment: string;
   word_count: number;
-  ai_score: number | null;
-  plagiarism_score: number | null;
   credits_used: number;
   created_at: string;
 }
@@ -18,47 +20,50 @@ export function useScanHistory() {
   const [loading, setLoading] = useState(true);
 
   const fetchHistory = useCallback(async () => {
-    if (!user) { setHistory([]); setLoading(false); return; }
-    const { data } = await supabase
-      .from("scan_history")
-      .select("*")
+    if (!user) {
+      setHistory([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await (supabase as any)
+      .from("scans")
+      .select("id,user_id,document_name,ai_score,human_score,risk_assessment,word_count,credits_used,created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(50);
-    setHistory((data as ScanHistoryEntry[]) || []);
+      .limit(100);
+
+    if (error) {
+      console.error("Failed to fetch scan history:", error);
+      setHistory([]);
+    } else {
+      setHistory((data as ScanHistoryEntry[]) || []);
+    }
+
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
-  // Realtime: auto-refresh when new scans are inserted for this user
   useEffect(() => {
     if (!user) return;
+
     const channel = supabase
-      .channel(`scan_history_${user.id}`)
+      .channel(`scans_${user.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "scan_history", filter: `user_id=eq.${user.id}` },
-        () => { fetchHistory(); }
+        { event: "INSERT", schema: "public", table: "scans", filter: `user_id=eq.${user.id}` },
+        () => fetchHistory(),
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, fetchHistory]);
 
-  const logScan = async (entry: {
-    title: string;
-    word_count: number;
-    ai_score?: number;
-    plagiarism_score?: number;
-    credits_used: number;
-  }) => {
-    if (!user) return;
-    await supabase.from("scan_history").insert({
-      user_id: user.id,
-      ...entry,
-    });
-    // Realtime will trigger fetchHistory automatically
-  };
-
-  return { history, loading, logScan, refetch: fetchHistory };
+  return { history, loading, refetch: fetchHistory };
 }
