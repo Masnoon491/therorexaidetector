@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [scanOptions, setScanOptions] = useState<ScanOptions>({ aiScore: true, plagiarism: true, readability: false });
   const [currentWordCount, setCurrentWordCount] = useState(0);
   const [currentDocName, setCurrentDocName] = useState("");
+  const [contextConfirmed, setContextConfirmed] = useState(false);
   const [lastScanMeta, setLastScanMeta] = useState<{ wordCount: number; creditsUsed: number; ipAddress: string | null; documentName: string }>({ wordCount: 0, creditsUsed: 0, ipAddress: null, documentName: "" });
   const editorRef = useRef<ContentEditorRef>(null);
   const { toast } = useToast();
@@ -115,7 +116,7 @@ const Dashboard = () => {
   if (loading) return null;
   if (!user) return null;
 
-  const scanDisabled = currentWordCount < 100 || isScanning || isExpired || !currentDocName.trim();
+  const scanDisabled = currentWordCount < 200 || isScanning || isExpired || !currentDocName.trim() || !contextConfirmed;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -136,7 +137,7 @@ const Dashboard = () => {
                 <div className="flex-1 flex">
                   <div className="flex-1 flex flex-col min-w-0 border-r border-border">
                     <div className="flex-1">
-                      <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} onDocNameChange={setCurrentDocName} />
+                      <ContentEditor ref={editorRef} onTextChange={(t) => setCurrentWordCount(t.trim() === "" ? 0 : t.trim().split(/\s+/).length)} onDocNameChange={setCurrentDocName} onContextConfirmChange={setContextConfirmed} />
                     </div>
                   </div>
                   <div className="w-72 shrink-0 bg-card border-l border-border hidden lg:flex flex-col">
