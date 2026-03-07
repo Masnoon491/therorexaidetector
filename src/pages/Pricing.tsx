@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Check, Mail, ArrowRight, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 import { PaymentSubmitDialog } from "@/components/PaymentSubmitDialog";
+import PricingCard from "@/components/PricingCard";
 
 interface Plan {
   name: string;
@@ -29,91 +30,6 @@ const corporatePlans: Plan[] = [
   { name: "Agency", price: "60,000", words: "1,000,000", credits: 10000, recommended: true },
   { name: "Heavy User", price: "100,000", words: "2,000,000", credits: 20000 },
 ];
-
-const features = [
-  "Audit-Grade PDF Report Generation",
-  "AI Sentence Heatmap & Depth Analysis",
-  "Professional 'Authenticity Certificate'",
-];
-
-const PricingCard = ({ plan, onGetStarted }: { plan: Plan; onGetStarted: (planName: string) => void }) => (
-  <div
-    className={`relative rounded-2xl border bg-white flex flex-col transition-all duration-200 ${
-      plan.recommended
-        ? "border-[#00B894] shadow-[0_8px_30px_-8px_rgba(0,184,148,0.18)] scale-[1.03] z-10"
-        : "border-[#E2E8F0] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
-    }`}
-  >
-    {plan.recommended && (
-      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-        <span className="inline-block bg-[#00B894] text-white text-[11px] font-bold uppercase tracking-widest px-4 py-1 rounded-full shadow-sm">
-          Recommended
-        </span>
-      </div>
-    )}
-
-    <div className="p-6 pb-4 text-center border-b border-[#F1F3F5]">
-      <h3 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: "#636e72" }}>
-        {plan.name}
-      </h3>
-
-      <div className="mb-1">
-        <span className="text-4xl font-extrabold tracking-tight" style={{ color: "#2D3436" }}>
-          {plan.price}
-        </span>
-        <span className="text-base font-semibold ml-1" style={{ color: "#2D3436" }}>
-          TK
-        </span>
-        <span className="text-sm font-medium ml-1" style={{ color: "#636e72" }}>
-          / month
-        </span>
-      </div>
-
-      <p className="text-[11px] font-medium tracking-wide uppercase" style={{ color: "#b2bec3" }}>
-        Billed Monthly • 30 Day Validity
-      </p>
-    </div>
-
-    <div className="p-6 pt-4 flex flex-col flex-1">
-      <div className="mb-5 space-y-2">
-        <div className="flex items-center justify-between text-sm rounded-lg px-3 py-2" style={{ background: "#F8F9FA" }}>
-          <span style={{ color: "#636e72" }}>Monthly Words</span>
-          <span className="font-bold" style={{ color: "#2D3436" }}>{plan.words}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm rounded-lg px-3 py-2" style={{ background: "#F8F9FA" }}>
-          <span style={{ color: "#636e72" }}>Credits</span>
-          <span className="font-bold" style={{ color: "#00B894" }}>{plan.credits.toLocaleString()}</span>
-        </div>
-        <p className="text-[10px] text-center" style={{ color: "#b2bec3" }}>
-          1 Credit = 100 Words
-        </p>
-      </div>
-
-      <ul className="space-y-3 mb-6 flex-1">
-        {features.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-[13px] leading-snug" style={{ color: "#2D3436" }}>
-            <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "#00B894" }} strokeWidth={2.5} />
-            {f}
-          </li>
-        ))}
-      </ul>
-
-      <button
-        onClick={() => onGetStarted(plan.name)}
-        className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
-          plan.recommended ? "hover:opacity-90" : "hover:bg-[#00B894] hover:text-white hover:border-[#00B894]"
-        }`}
-        style={
-          plan.recommended
-            ? { background: "#00B894", color: "#fff" }
-            : { border: "2px solid #00B894", color: "#00B894", background: "transparent" }
-        }
-      >
-        Get Started <ArrowRight className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  </div>
-);
 
 const Pricing = () => {
   const [tab, setTab] = useState<"individual" | "corporate">("individual");
