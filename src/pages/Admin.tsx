@@ -88,6 +88,9 @@ const Admin = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Postpone loading
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
   // Last refreshed timestamp
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
