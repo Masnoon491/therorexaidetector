@@ -834,7 +834,7 @@ const Admin = () => {
           userId={selectedUser.user_id}
           userEmail={selectedUser.email}
           currentBalance={selectedUser.current_balance}
-          onComplete={() => { fetchUserSummaries(); fetchInventory(); }}
+          onComplete={() => refreshAll()}
         />
       )}
 
